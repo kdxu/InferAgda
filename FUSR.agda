@@ -7,39 +7,33 @@ open import Data.Empty
 open import Data.Fin
 open import Data.Sum
 open import Data.Bool
+open import Data.Maybe
 import Level
+
 ---------------------------------------------------------------
 
---p3
-
-data Maybe (A : Set) : Set where
-  no  : Maybe A
-  yes : A → Maybe A
-
---p4
-
 lf : {S T : Set} → (f : S → T) → (S → Maybe T)
-lf f = λ x → yes (f x)
+lf f = λ x → just (f x)
 rf : {S T : Set} → (f : S → Maybe T) → (Maybe S → Maybe T)
-rf f no = no
-rf f (yes x) = f x
+rf f nothing = nothing
+rf f (just x) = f x
 lrf :{S T : Set} → (f : S → T) → (Maybe S → Maybe T)
 lrf f = rf (lf f)
 _∘_ : {A B C : Set} → (f : B → C) → (g : A → B) → (A → C)
 f ∘ g = λ x → f (g x)
 
 lf2 : {R S T : Set} → (f : R → S → T) → (R → S → Maybe T)
-lf2 f = λ x x₁ → yes (f x x₁)
+lf2 f = λ x x₁ → just (f x x₁)
 
 rf2 : {R S T : Set} → (f : R → S → Maybe T) → (R → Maybe S → Maybe T)
-rf2 f x no = no
-rf2 f x (yes x₁) = f x x₁
+rf2 f x nothing = nothing
+rf2 f x (just x₁) = f x x₁
 
 cf2 : {R S T : Set} → (f : R → Maybe S → Maybe T) → (Maybe R → Maybe S → Maybe T)
-cf2 f no no = no
-cf2 f no (yes x) = no
-cf2 f (yes x) no = f x no
-cf2 f (yes x) (yes x₁) = f x (yes x₁)
+cf2 f nothing nothing = nothing
+cf2 f nothing (just x) = nothing
+cf2 f (just x) nothing = f x nothing
+cf2 f (just x) (just x₁) = f x (just x₁)
 
 lrf2 : {R S T : Set} → (f : R → S → T) → (Maybe R → Maybe S → Maybe T)
 lrf2 f = cf2 (rf2 (lf2 f))
@@ -107,28 +101,30 @@ thin {suc n} (suc x) (suc y) = suc (thin x y)
 
 
 thick : {n : ℕ} → (x y : Fin (suc n)) → Maybe (Fin n)
-thick {n} zero zero = no
-thick {n} zero (suc y) = yes y
+thick {n} zero zero = nothing
+thick {n} zero (suc y) = just y
 thick {zero} (suc ()) zero
-thick {suc n} (suc x) zero = yes zero
+thick {suc n} (suc x) zero = just zero
 thick {zero} (suc ()) (suc y)
 thick {suc n} (suc x) (suc y) = lrf suc (thick {n} x y)
 
 check : {n : ℕ} → Fin (suc n) → Term (suc n) → Maybe (Term n)
 check x (ι y) = lrf ι (thick x y)
-check x leaf = yes leaf
+check x leaf = just leaf
 check x (s fork t) = lrf2 _fork_ (check x s) (check x t)
 
 _for_ : {n : ℕ} → (t' : Term n) → (x : Fin (suc n)) → (Fin (suc n) → Term n)
 _for_ t' x y with thick x y
-_for_ t' x y | no = t'
-_for_ t' x y | yes y' = ι y'
+_for_ t' x y | nothing = t'
+_for_ t' x y | just y' = ι y'
 
---- P.11
+
 data AList : ℕ → ℕ → Set where
   anil : {m : ℕ} → AList m m
   _asnoc_/_ : {m : ℕ} {n : ℕ} → (σ : AList m n) → (t' : Term m) → (x : Fin (suc m)) → AList (suc m) n
---snoc : consの逆 []::2 ::3 :: ...
+--asnoc : consの逆 []::2 ::3 :: ...
+_asnoc'_/_ : {m : ℕ} → (a : ∃ (AList m)) → (t' : Term m) → (x : Fin (suc m)) → ∃ (AList (suc m))
+( s , t ) asnoc' t' / x = ( s , t asnoc t' / x )
 
 --_◇_ : {m n l : ℕ} → (f : Fin m → Term n) → (g : Fin l → Term m) → (Fin l → Term n)
 sub : {m n : ℕ} → (σ : AList m n) → Fin m → Term n
@@ -138,12 +134,7 @@ sub (σ asnoc t' / x) = (sub σ) ◇ (t' for x)
 _⊹⊹_ : {l m n : ℕ} → (ρ : AList m n) → (σ : AList l m) →  AList l n
 ρ ⊹⊹ anil = ρ
 ρ ⊹⊹ (alist asnoc t / x) = (ρ ⊹⊹ alist) asnoc t / x
--- ∃(λx : S.T)
-data ∃' {S : Set} (T : S → Set) : Set where
-  ⟪_,_⟫ : (s : S) → (t : T s) →  ∃' T
 
-_asnoc'_/_ : {m : ℕ} → (a : ∃' (AList m)) → (t' : Term m) → (x : Fin (suc m)) → ∃' (AList (suc m))
-⟪ s , t ⟫ asnoc' t' / x = ⟪ s , t asnoc t' / x ⟫
 
 data AList' : ℕ →  Set where
   anil' : {m : ℕ} → AList' m
@@ -158,8 +149,6 @@ _⊹⊹'_ anil' ρ = ρ
 _⊹⊹'_ (alist acons' t' / x)  ρ = (_⊹⊹'_ alist ρ) acons' t' / x
 
 
-
-
 sub' : {m : ℕ} →  (σ : AList' m) → (Fin m → Term (targ σ))
 sub' anil' = ι
 sub' (σ acons' t' / x) =  (sub' σ) ◇ (t' for x)
@@ -167,31 +156,30 @@ sub' (σ acons' t' / x) =  (sub' σ) ◇ (t' for x)
 
 -- p14
 
-flexFlex : {m : ℕ} → (x y : Fin m) → (∃' (AList m))
+flexFlex : {m : ℕ} → (x y : Fin m) → (∃ (AList m))
 flexFlex {suc m} x y with thick x y 
-flexFlex {suc m} x y | no = ⟪ (suc m) , anil ⟫
-flexFlex {suc m} x y | yes y' = ⟪ m , anil asnoc (ι y') / x ⟫
+flexFlex {suc m} x y | nothing = ( (suc m) , anil )
+flexFlex {suc m} x y | just y' = ( m , anil asnoc (ι y') / x )
 flexFlex {zero} () y
 
-flexRigid : {m : ℕ} → (x : Fin m) → (t : Term m) → Maybe (∃' (AList m))
+flexRigid : {m : ℕ} → (x : Fin m) → (t : Term m) → Maybe (∃ (AList m))
 flexRigid {zero} () t
 flexRigid {suc m} x t with check x t
-flexRigid {suc m} x t | no = no
-flexRigid {suc m} x t | yes t' = yes ⟪ m , (anil asnoc t' / x) ⟫
+flexRigid {suc m} x t | nothing = nothing
+flexRigid {suc m} x t | just t' = just ( m , (anil asnoc t' / x) )
 
-amgu : {m : ℕ} → (s t : Term m) → (acc : ∃' (AList m)) →  Maybe (∃' (AList m))
-amgu {suc m} s t ⟪ n , σ asnoc r / z ⟫ = lrf (λ σ₁ → σ₁ asnoc' r / z) (amgu {m} ((r for z) ◃ s) ((r for z) ◃ t) ⟪ n , σ ⟫)
-amgu leaf leaf acc = yes acc
-amgu leaf (t fork t₁) acc = no
-amgu (ι x) (ι x₁) ⟪ s , anil ⟫ = yes (flexFlex x x₁)
+amgu : {m : ℕ} → (s t : Term m) → (acc : ∃ (AList m)) →  Maybe (∃ (AList m))
+amgu {suc m} s t ( n , σ asnoc r / z ) = lrf (λ σ₁ → σ₁ asnoc' r / z) (amgu {m} ((r for z) ◃ s) ((r for z) ◃ t) ( n , σ ))
+amgu leaf leaf acc = just acc
+amgu leaf (t fork t₁) acc = nothing
+amgu (ι x) (ι x₁) ( s , anil ) = just (flexFlex x x₁)
 amgu t (ι x) acc = flexRigid x t
 amgu (ι x) t acc = flexRigid x t
-amgu (s fork s₁) leaf acc = no
+amgu (s fork s₁) leaf acc = nothing
 amgu {m} (s fork s₁) (t fork t₁) acc = rf (amgu {m} s₁ t₁) (amgu {m} s t acc)
 
-mgu : {m : ℕ} → (s t : Term m) → Maybe (∃' (AList m))
-mgu {m} s t = amgu {m} s t ⟪ m , anil ⟫
-
+mgu : {m : ℕ} → (s t : Term m) → Maybe (∃ (AList m))
+mgu {m} s t = amgu {m} s t ( m , anil )
 
 -- test
 
@@ -201,24 +189,23 @@ t1 = (ι zero) fork (ι zero)
 t2 : Term 4
 t2 = ((ι (suc zero)) fork (ι (suc (suc zero)))) fork (ι (suc (suc (suc zero))))
 
-u12 : Maybe (∃' (AList 4))
+u12 : Maybe (∃ (AList 4))
 u12 = (mgu t1 t2)
 
---u12 ≡ yes
---⟪ 2 ,
+--u12 ≡ just
+--( 2 ,
 --(anil asnoc ι zero fork ι (suc zero) / suc (suc zero)) asnoc
 --ι zero fork ι (suc zero) / zero
---⟫
+--)
 -- (1 → 2) → 3
 -- 0が無いので
 -- 数字がずれて
 -- (0 → 1) → 2 
 -- (0 → 1) → (0 → 1)
-
 -- unifyできない例
 
 t3 : Term 4
 t3 = ((ι zero) fork (ι (suc (suc zero)))) fork (ι (suc (suc (suc zero))))
 
-u13 : Maybe (∃' (AList 4))
+u13 : Maybe (∃ (AList 4))
 u13 = (mgu t1 t3)
