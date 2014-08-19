@@ -63,11 +63,21 @@ count (Var x) = zero
 count (Lam t) = suc (count t)
 count (App t t₁) = count t + suc (count t₁) 
 
-inferW : {m n : ℕ} →  (Γ : Cxt {m} n) → (e : WellScopedTerm n) → (Σ[ m' ∈ ℕ ] AList (m + count e) m' × Type m')
-inferW {m} Γ (Var x) rewrite (+-right-identity m) = m , (anil , lookup x Γ)
+inferW : {m n : ℕ} →  (Γ : Cxt {m} n) → (e : WellScopedTerm n) → Maybe (Σ[ m' ∈ ℕ ] AList (m + count e) m' × Type m')
+inferW {m} Γ (Var x) rewrite (+-right-identity m) = just ( m , (anil , lookup x Γ))
 inferW {m} Γ (Lam e) with inferW {suc m} (ι (fromℕ m) ∷ (vecinject (▹◃ inject₁) Γ)) e
-inferW {m} Γ (Lam e) | m' , s₁ , τ₁ rewrite +-suc m (count e) = m' , (s₁ , (sub s₁ (inject+ (count e) (fromℕ m))) fork τ₁)
-inferW Γ (App e e₁) = {!!}
+inferW {m} Γ (Lam e) | just (m' , s₁ , τ₁) rewrite +-suc m (count e) = just ( m' , (s₁ , (sub s₁ (inject+ (count e) (fromℕ m))) fork τ₁))
+inferW {m} Γ (Lam e) | nothing = nothing
+inferW {m} Γ (App e e₁) with inferW {m} Γ e
+inferW {m} Γ (App e e₁) | nothing = nothing
+inferW {m} Γ (App e e₁) | just (m' , σ , τ) with inferW {m'} (vecinject (▹◃ inject) Γ) e₁
+inferW Γ (App e e₁) | just (m' , σ , τ) | just x = {!!}
+inferW Γ (App e e₁) | just (m' , σ , τ) | nothing = nothing
+--inferW Γ (App e e₁) | just (m' , s₁ , τ₁) | nothing = nothing
+--inferW Γ (App e e₁) | just (m' , s₁ , τ₁) | just(m'' , s₂ , τ₂) with unify {m''} (sub s₂ (inject {!!})) (τ₂ fork (ι {!!})) 
+
+--inferW Γ (App e e₁) | just (m' , s₁ , τ₁) | just (m'' , s₂ , τ₂) | just x = just ({!!} , ({!!} , {!!}))
+--inferW Γ (App e e₁) | just (m' , s₁ , τ₁) | just (m'' , s₂ , τ₂) | nothing = nothing
 --inferW {m} {n} Γ (Var x) rewrite (+-right-identity m) = m , (anil , lookup x Γ) --m , anil , lookup x Γ
 --inferW {m} Γ (Lam τ t) with (inferW {suc m} ((ι (fromℕ m)) ∷ (vecinject (▹◃ inject₁) Γ)) (terminject (▹◃ inject₁) t))
 --... | b = {!!}
