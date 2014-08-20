@@ -43,18 +43,6 @@ data WellScopedTerm (n : ℕ) : Set where
   Lam : WellScopedTerm (suc n) → WellScopedTerm n
   App : WellScopedTerm n → WellScopedTerm n → WellScopedTerm n
 
-{-
-data WellScopedTerm {m n : ℕ} (Γ : Cxt {m} n) : Set where
-  Var : Fin n → WellScopedTerm Γ
-  Lam : (τ : Type m) → WellScopedTerm {m} (τ ∷ Γ) → WellScopedTerm Γ
-  App : WellScopedTerm {m} Γ → WellScopedTerm {m} Γ → WellScopedTerm Γ
-
-terminject : {m m' n : ℕ} → (Type m → Type m') → {Γ : Cxt {m} n} → {Γ' : Cxt {m'} n} → WellScopedTerm Γ → WellScopedTerm Γ'
-terminject f (Var x) = Var x
-terminject f (Lam τ t) = Lam (f τ) (terminject f t)
-terminject f (App t t₁) = App (terminject f t) (terminject f t₁)
--}
-
 unify : {m : ℕ} → Type m → Type m → Maybe (∃ (AList m))
 unify {m} t1 t2 = mgu {m} t1 t2
 
@@ -63,6 +51,9 @@ count (Var x) = zero
 count (Lam t) = suc (count t)
 count (App t t₁) = count t + suc (count t₁) 
 
+-- e は最大 n 個の自由変数を持つ項
+-- Γは、その n 個の自由変数の型を与える型環境
+-- 型環境中の各型は、最大で m 個の型変数を含む
 inferW : {m n : ℕ} →  (Γ : Cxt {m} n) → (e : WellScopedTerm n) → Maybe (Σ[ m' ∈ ℕ ] AList (m + count e) m' × Type m')
 inferW {m} Γ (Var x) rewrite (+-right-identity m) = just ( m , (anil , lookup x Γ))
 inferW {m} Γ (Lam e) with inferW {suc m} (ι (fromℕ m) ∷ (vecinject (▹◃ inject₁) Γ)) e
@@ -70,16 +61,9 @@ inferW {m} Γ (Lam e) | just (m' , s₁ , τ₁) rewrite +-suc m (count e) = jus
 inferW {m} Γ (Lam e) | nothing = nothing
 inferW {m} Γ (App e e₁) with inferW {m} Γ e
 inferW {m} Γ (App e e₁) | nothing = nothing
-inferW {m} Γ (App e e₁) | just (m' , σ , τ) with inferW {m'} (vecinject (▹◃ inject) Γ) e₁
-inferW Γ (App e e₁) | just (m' , σ , τ) | just x = {!!}
+inferW {m} Γ (App e e₁) | just (m' , σ , τ) with inferW {m + (count e)} (vecinject (▹◃ (inject+ (count e))) Γ) e₁
+inferW Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁)  rewrite +-suc m' (count e₁) with unify {m' + count e₁} {!!} ({!!} fork ι (inject+ (count e₁) {!!}))
+inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | just (m''' , σ₂) = just (m' , (σ ⊹⊹ ({!!} ⊹⊹ {!!}) , sub {!σ₂!} (fromℕ m'')))
+inferW Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | nothing = nothing
 inferW Γ (App e e₁) | just (m' , σ , τ) | nothing = nothing
---inferW Γ (App e e₁) | just (m' , s₁ , τ₁) | nothing = nothing
---inferW Γ (App e e₁) | just (m' , s₁ , τ₁) | just(m'' , s₂ , τ₂) with unify {m''} (sub s₂ (inject {!!})) (τ₂ fork (ι {!!})) 
 
---inferW Γ (App e e₁) | just (m' , s₁ , τ₁) | just (m'' , s₂ , τ₂) | just x = just ({!!} , ({!!} , {!!}))
---inferW Γ (App e e₁) | just (m' , s₁ , τ₁) | just (m'' , s₂ , τ₂) | nothing = nothing
---inferW {m} {n} Γ (Var x) rewrite (+-right-identity m) = m , (anil , lookup x Γ) --m , anil , lookup x Γ
---inferW {m} Γ (Lam τ t) with (inferW {suc m} ((ι (fromℕ m)) ∷ (vecinject (▹◃ inject₁) Γ)) (terminject (▹◃ inject₁) t))
---... | b = {!!}
---inferW {m} Γ (Lam τ t) | m' , (s₁ , τ₁) = m' , ({!!} , {!!} fork τ₁)
---inferW Γ (App t t₁) = {!!}
