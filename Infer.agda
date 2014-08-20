@@ -61,9 +61,9 @@ inferW {m} Γ (Lam e) | just (m' , s₁ , τ₁) rewrite +-suc m (count e) = jus
 inferW {m} Γ (Lam e) | nothing = nothing
 inferW {m} Γ (App e e₁) with inferW {m} Γ e
 inferW {m} Γ (App e e₁) | nothing = nothing
-inferW {m} Γ (App e e₁) | just (m' , σ , τ) with inferW {m + (count e)} (vecinject (▹◃ (inject+ (count e))) Γ) e₁
-inferW Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁)  rewrite +-suc m' (count e₁) with unify {m' + count e₁} {!!} ({!!} fork ι (inject+ (count e₁) {!!}))
-inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | just (m''' , σ₂) = just (m' , (σ ⊹⊹ ({!!} ⊹⊹ {!!}) , sub {!σ₂!} (fromℕ m'')))
+inferW {m} Γ (App e e₁) | just (m' , σ , τ) with inferW {m} Γ e₁
+inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) with unify (sub σ₁ (inject+ (count e₁) {!fromℕ!})) ({!!} fork ι {!fromℕ!})
+inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | just (m''' , σ₂) = just (m''' , (σ₂ ⊹⊹ (σ₁ ⊹⊹ {!σ!}) , {!!})) ---just (m' , (σ ⊹⊹ ({!σ₂!} ⊹⊹ {!!}) , sub {!σ₂!} (fromℕ m'')))
 inferW Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | nothing = nothing
 inferW Γ (App e e₁) | just (m' , σ , τ) | nothing = nothing
 
