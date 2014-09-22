@@ -18,6 +18,16 @@ import Level
 +-right-identity zero = refl
 +-right-identity (suc n) = cong suc $ +-right-identity n
 
++-assoc : ∀ m n o → (m + n) + o ≡  m + (n + o)
++-assoc zero n o = refl
++-assoc (suc m) n o = cong suc $ +-assoc m n o
+
+--Termにはwellscopedtermを使うといい．
+--TypeにはFUSRのtermが使える．
+
+Cxt : {m : ℕ} → ℕ → Set
+Cxt {m} n = Vec (Type m) n -- ここのmをどう持ち歩いてよいか分からない． 
+
 --injectv₁ : ∀ {m} → Fin m → Fin (suc m)
 --injectv₁ zero    = zero
 --injectv₁ (suc i) = suc (inject₁ i)
@@ -26,17 +36,37 @@ import Level
 +-suc zero    n = refl
 +-suc (suc m) n = cong suc (+-suc m n)
 
-vecinject : {m m' n : ℕ} → (Type m → Type m') → Vec (Type m) n → Vec (Type m') n
+
+-- Cxt を持ち上げるやつ
+vecinject : {m m' n : ℕ} → (Type m → Type m') → Cxt {m} n -> Cxt {m'} n --Vec (Type m) n → Vec (Type m') n
 vecinject f [] = []
 vecinject f (x ∷ v) = (f x) ∷ vecinject f v
 
+-- AList m n → Type m → Type n
+-- Type に σ を適用させるやつ
+substtype :{m n : ℕ} → AList m n → Type m → Type n 
+substtype a = (sub a) ◃
+
+-- AList m m' → Cxt m n → Cxt m' n 
+-- Cxt に σ を適用させるやつ
+substenv : {m m' n : ℕ} → AList m m' → Cxt {m} n → Cxt {m'} n 
+substenv a [] = []
+substenv a (x ∷ c) = substtype a x ∷ substenv a c
+
+liftAList₁ : {m m' : ℕ} → AList m m' → AList (suc m) (suc m')
+liftAList₁ {m} {.m}  anil = anil 
+liftAList₁ (a asnoc t' / x) = (liftAList₁ a) asnoc ▹◃ inject₁ t' / inject₁ x
+
+liftAList : {m m' : ℕ} → (n : ℕ) → AList m m' → AList (m + n) (m' + n)
+liftAList {m} {.m}  n anil = anil 
+liftAList n (a asnoc t' / x) = (liftAList n a) asnoc ▹◃ (inject+ n) t' / inject+ n x
+
+--liftAList : {m m' : ℕ} → (n : ℕ) → AList m m' → AList (m + n) (m + n)
+--liftAList zero a = {!a!}
+--liftAList (suc n) a = liftAList n {!liftAList₁!}
 -----------------------------------------------
 
---Termにはwellscopedtermを使うといい．
---TypeにはFUSRのtermが使える．
 
-Cxt : {m : ℕ} → ℕ → Set
-Cxt {m} n = Vec (Type m) n -- ここのmをどう持ち歩いてよいか分からない．
 
 data WellScopedTerm (n : ℕ) : Set where
   Var : Fin n → WellScopedTerm n
@@ -51,6 +81,9 @@ count (Var x) = zero
 count (Lam t) = suc (count t)
 count (App t t₁) = count t + suc (count t₁) 
 
+liftσ₂ : {m m' m'' m''' n : ℕ} → (e e₁ : WellScopedTerm n) →  AList (m + count e) m'  → AList (m + count e + suc (count e₁)) (suc (m' + count e₁))
+liftσ₂ {m} {m'} {m''} {m'''} {n} e e₁ alist rewrite (sym (+-suc m' (count e₁))) = liftAList (suc (count e₁)) alist
+
 -- e は最大 n 個の自由変数を持つ項
 -- Γは、その n 個の自由変数の型を与える型環境
 -- 型環境中の各型は、最大で m 個の型変数を含む
@@ -59,11 +92,19 @@ inferW {m} Γ (Var x) rewrite (+-right-identity m) = just ( m , (anil , lookup x
 inferW {m} Γ (Lam e) with inferW {suc m} (ι (fromℕ m) ∷ (vecinject (▹◃ inject₁) Γ)) e
 inferW {m} Γ (Lam e) | just (m' , s₁ , τ₁) rewrite +-suc m (count e) = just ( m' , (s₁ , (sub s₁ (inject+ (count e) (fromℕ m))) fork τ₁))
 inferW {m} Γ (Lam e) | nothing = nothing
-inferW {m} Γ (App e e₁) with inferW {m} Γ e
-inferW {m} Γ (App e e₁) | nothing = nothing
-inferW {m} Γ (App e e₁) | just (m' , σ , τ) with inferW Γ e₁ -- m' : e の中の型変数の数 
-inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) with unify (sub σ₁ {!!}) ({!!} fork ι {!!})
-inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | just (m''' , σ₂) = just (m''' , (σ₂ ⊹⊹ (σ₁ ⊹⊹ {!σ!}) , sub σ₂ {!fromℕ!})) ---just (m' , (σ ⊹⊹ ({!σ₂!} ⊹⊹ {!!}) , sub {!σ₂!} (fromℕ m'')))
+inferW {m} Γ (App e e₁) with inferW {m} Γ e -- App の型推論，infer m Γ e の結果で場合分けする
+inferW {m} Γ (App e e₁) | nothing = nothing --σ  : AList (m + count e) m'
+inferW {m} Γ (App e e₁) | just (m' , σ , τ) with inferW (substenv σ (vecinject (▹◃ (inject+ (count e))) Γ)) e₁ -- m',m'' : e,e₁ の中の型変数の数 (たかだかm+count e個) 
+inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) with unify (▹◃ inject₁ ((substtype σ₁ (▹◃ (inject+ (count e₁)) τ))))  (▹◃ inject₁ τ₁ fork ι (fromℕ m''))
+inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | just (m''' , σ₂)  rewrite (sym (+-assoc m (count e) (suc (count e₁)))) {-| (sym (+-suc m' (count e₁)))-} = just (m''' , σ₂ ⊹⊹ ((liftAList₁ σ₁) ⊹⊹  liftσ₂ {m} {m'} {m''} {m'''} {_} e e₁ σ ), (substtype σ₂ (ι (fromℕ m''))))
 inferW Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | nothing = nothing
 inferW Γ (App e e₁) | just (m' , σ , τ) | nothing = nothing
+
+
+--?0 : AList (m + (count e + suc (count e₁))) (suc (m' + count e₁))
+-- AList (m + (count e + suc (count e₁))) m'''
+-- σ    : AList (m + count e) m'
+-- σ₁   : AList (m' + count e₁) m''
+-- σ₂   : AList (suc m'') m'''
+
 
