@@ -14,7 +14,11 @@ open import lib
 open import Function
 import Level
 
-{- TODO : Let 多相を入れる -}
+{-
+TODO : Let 多相を入れる 
+       推論が正しいことを証明する
+         -->部分評価器の正当性
+  -}
 
 +-right-identity : ∀ n → n + 0 ≡ n
 +-right-identity zero = refl
@@ -23,9 +27,6 @@ import Level
 +-assoc : ∀ m n o → (m + n) + o ≡  m + (n + o)
 +-assoc zero n o = refl
 +-assoc (suc m) n o = cong suc $ +-assoc m n o
-
---Termにはwellscopedtermを使うといい．
---TypeにはFUSRのtermが使える．
 
 Cxt : {m : ℕ} → ℕ → Set
 Cxt {m} n = Vec (Type m) n -- ここのmをどう持ち歩いてよいか分からない． 
@@ -63,6 +64,7 @@ data WellScopedTerm (n : ℕ) : Set where
   Var : Fin n → WellScopedTerm n
   Lam : WellScopedTerm (suc n) → WellScopedTerm n
   App : WellScopedTerm n → WellScopedTerm n → WellScopedTerm n
+  Let : Fin n → WellScopedTerm n → WellScopedTerm n → WellScopedTerm n 
 
 unify : {m : ℕ} → Type m → Type m → Maybe (∃ (AList m))
 unify {m} t1 t2 = mgu {m} t1 t2
@@ -71,9 +73,16 @@ count : {n : ℕ} → (t : WellScopedTerm n) → ℕ
 count (Var x) = zero
 count (Lam t) = suc (count t)
 count (App t t₁) = count t + suc (count t₁) 
+count (Let x e e₁) = (count e₁) -- ? 
 
 liftσ₂ : {m m' m'' m''' n : ℕ} → (e e₁ : WellScopedTerm n) →  AList (m + count e) m'  → AList (m + count e + suc (count e₁)) (suc (m' + count e₁))
 liftσ₂ {m} {m'} {m''} {m'''} {n} e e₁ alist rewrite (sym (+-suc m' (count e₁))) = liftAList (suc (count e₁)) alist
+
+liftterm : {n : ℕ} → (e : WellScopedTerm n) → (m : ℕ) → WellScopedTerm (n + m)
+liftterm (Var x) m = Var (inject+ m x)
+liftterm (Lam e) m = Lam (liftterm e m)
+liftterm (App e e₁) m = App (liftterm e m) (liftterm e₁ m)
+liftterm (Let x e e₁) m = Let (inject+ m x) (liftterm e m) (liftterm e₁ m)
 
 -- e は最大 n 個の自由変数を持つ項
 -- Γは、その n 個の自由変数の型を与える型環境
@@ -90,29 +99,38 @@ inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) wi
 inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | just (m''' , σ₂)  rewrite (sym (+-assoc m (count e) (suc (count e₁)))) = just (m''' , σ₂ ⊹⊹ ((liftAList₁ σ₁) ⊹⊹  liftσ₂ {m} {m'} {m''} {m'''} {_} e e₁ σ ), (substtype σ₂ (ι (fromℕ m''))))
 inferW Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | nothing = nothing
 inferW Γ (App e e₁) | just (m' , σ , τ) | nothing = nothing
+inferW Γ (Let x e e₁) with inferW Γ e
+-- inferW let x = e in e₁ =
+-- let inferW Γ e = (σ,τ) in
+-- let inferW (σ Γx ∪ {x : substenv(σ Γ) (τ)}) e₁ = (σ₁, τ₁) in
+-- (σ₁ σ, τ₁)
+inferW {m} Γ (Let x e e₁) | just (m' , σ , τ) with inferW ((ι (fromℕ m')) ∷ (substenv (liftAList₁ σ) (vecinject (▹◃ inject) Γ))) (liftterm {!!} {!!})
+inferW {m} Γ (Let x e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) = just (m'' , ({!!} , τ₁))
+inferW {m} Γ (Let x e e₁) | just (m' , σ , τ) | nothing = nothing
+inferW {m} Γ (Let x e e₁) | nothing = nothing
 
-test1 : WellScopedTerm 0
-test1 = Lam (Var zero)
-infer1 : inferW {0} [] test1 ≡ just (1 , anil , ι zero fork ι zero)
-infer1 = refl
+-- test1 : WellScopedTerm 0
+-- test1 = Lam (Var zero)
+-- infer1 : inferW {0} [] test1 ≡ just (1 , anil , ι zero fork ι zero)
+-- infer1 = refl
 
-test2 : WellScopedTerm 0
-test2 = Lam (Lam (Var zero))
-infer2 : inferW {0} [] test2 ≡ just (2 , anil , ι zero fork (ι (suc zero) fork ι (suc zero)))
-infer2 = refl 
+-- test2 : WellScopedTerm 0
+-- test2 = Lam (Lam (Var zero))
+-- infer2 : inferW {0} [] test2 ≡ just (2 , anil , ι zero fork (ι (suc zero) fork ι (suc zero)))
+-- infer2 = refl 
 
-test3 : WellScopedTerm 0
-test3 = Lam (Lam (App (Var zero) (Var (suc zero))))
-infer3 : inferW {0} [] test3  ≡ just
-  (2 ,
-  anil asnoc ι zero fork ι (suc zero) / suc zero ,
-  ι zero fork ((ι zero fork ι (suc zero)) fork ι (suc zero)))
-infer3 = refl
+-- test3 : WellScopedTerm 0
+-- test3 = Lam (Lam (App (Var zero) (Var (suc zero))))
+-- infer3 : inferW {0} [] test3  ≡ just
+--   (2 ,
+--   anil asnoc ι zero fork ι (suc zero) / suc zero ,
+--   ι zero fork ((ι zero fork ι (suc zero)) fork ι (suc zero)))
+-- infer3 = refl
 
-test4 : WellScopedTerm 0
-test4 = Lam (App (Var zero) (Var zero))
-infer4 : inferW {0} [] test4 ≡ nothing
-infer4 = refl
+-- test4 : WellScopedTerm 0
+-- test4 = Lam (App (Var zero) (Var zero))
+-- infer4 : inferW {0} [] test4 ≡ nothing
+-- infer4 = refl
 
 
 
