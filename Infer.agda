@@ -90,23 +90,23 @@ liftterm (Let x e e₁) m = Let (inject+ m x) (liftterm e m) (liftterm e₁ m)
 inferW : {m n : ℕ} →  (Γ : Cxt {m} n) → (e : WellScopedTerm n) → Maybe (Σ[ m' ∈ ℕ ] AList (m + count e) m' × Type m')
 inferW {m} Γ (Var x) rewrite (+-right-identity m) = just ( m , (anil , lookup x Γ))
 inferW {m} Γ (Lam e) with inferW {suc m} (ι (fromℕ m) ∷ (vecinject (▹◃ inject₁) Γ)) e
-inferW {m} Γ (Lam e) | just (m' , s₁ , τ₁) rewrite +-suc m (count e) = just ( m' , (s₁ , (sub s₁ (inject+ (count e) (fromℕ m))) fork τ₁))
+inferW {m} Γ (Lam e) | just (m' , s₁ , t₁) rewrite +-suc m (count e) = just ( m' , (s₁ , (sub s₁ (inject+ (count e) (fromℕ m))) fork t₁))
 inferW {m} Γ (Lam e) | nothing = nothing
 inferW {m} Γ (App e e₁) with inferW {m} Γ e -- App の型推論，infer m Γ e の結果で場合分けする
 inferW {m} Γ (App e e₁) | nothing = nothing --σ  : AList (m + count e) m'
-inferW {m} Γ (App e e₁) | just (m' , σ , τ) with inferW (substenv σ (vecinject (▹◃ (inject+ (count e))) Γ)) e₁ -- m',m'' : e,e₁ の中の型変数の数 (たかだかm+count e個) 
-inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) with unify (▹◃ inject₁ ((substtype σ₁ (▹◃ (inject+ (count e₁)) τ))))  (▹◃ inject₁ τ₁ fork ι (fromℕ m''))
-inferW {m} Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | just (m''' , σ₂)  rewrite (sym (+-assoc m (count e) (suc (count e₁)))) = just (m''' , σ₂ ⊹⊹ ((liftAList₁ σ₁) ⊹⊹  liftσ₂ {m} {m'} {m''} {m'''} {_} e e₁ σ ), (substtype σ₂ (ι (fromℕ m''))))
-inferW Γ (App e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) | nothing = nothing
-inferW Γ (App e e₁) | just (m' , σ , τ) | nothing = nothing
+inferW {m} Γ (App e e₁) | just (m' , σ , t) with inferW (substenv σ (vecinject (▹◃ (inject+ (count e))) Γ)) e₁ -- m',m'' : e,e₁ の中の型変数の数 (たかだかm+count e個) 
+inferW {m} Γ (App e e₁) | just (m' , σ , t) | just (m'' , σ₁ , t₁) with unify (▹◃ inject₁ ((substtype σ₁ (▹◃ (inject+ (count e₁)) t))))  (▹◃ inject₁ t₁ fork ι (fromℕ m''))
+inferW {m} Γ (App e e₁) | just (m' , σ , t) | just (m'' , σ₁ , t₁) | just (m''' , σ₂)  rewrite (sym (+-assoc m (count e) (suc (count e₁)))) = just (m''' , σ₂ ⊹⊹ ((liftAList₁ σ₁) ⊹⊹  liftσ₂ {m} {m'} {m''} {m'''} {_} e e₁ σ ), (substtype σ₂ (ι (fromℕ m''))))
+inferW Γ (App e e₁) | just (m' , σ , t) | just (m'' , σ₁ , t₁) | nothing = nothing
+inferW Γ (App e e₁) | just (m' , σ , t) | nothing = nothing
 inferW Γ (Let x e e₁) with inferW Γ e
 -- inferW let x = e in e₁ =
--- let inferW Γ e = (σ,τ) in
--- let inferW (σ Γx ∪ {x : substenv(σ Γ) (τ)}) e₁ = (σ₁, τ₁) in
--- (σ₁ σ, τ₁)
-inferW {m} Γ (Let x e e₁) | just (m' , σ , τ) with inferW ((ι (fromℕ m')) ∷ (substenv (liftAList₁ σ) (vecinject (▹◃ inject) Γ))) (liftterm {!!} {!!})
-inferW {m} Γ (Let x e e₁) | just (m' , σ , τ) | just (m'' , σ₁ , τ₁) = just (m'' , ({!!} , τ₁))
-inferW {m} Γ (Let x e e₁) | just (m' , σ , τ) | nothing = nothing
+-- let inferW Γ e = (σ,t) in
+-- let inferW (σ Γx ∪ {x : substenv(σ Γ) (t)}) e₁ = (σ₁, t₁) in
+-- (σ₁ σ, t₁)
+inferW {m} Γ (Let x e e₁) | just (m' , σ , t) with inferW ((ι (fromℕ m')) ∷ (substenv (liftAList₁ σ) (vecinject (▹◃ inject) Γ))) (liftterm {!!} {!!})
+inferW {m} Γ (Let x e e₁) | just (m' , σ , t) | just (m'' , σ₁ , t₁) = just (m'' , ({!!} , t₁))
+inferW {m} Γ (Let x e e₁) | just (m' , σ , t) | nothing = nothing
 inferW {m} Γ (Let x e e₁) | nothing = nothing
 
 -- test1 : WellScopedTerm 0
@@ -131,7 +131,4 @@ inferW {m} Γ (Let x e e₁) | nothing = nothing
 -- test4 = Lam (App (Var zero) (Var zero))
 -- infer4 : inferW {0} [] test4 ≡ nothing
 -- infer4 = refl
-
-
-
 
