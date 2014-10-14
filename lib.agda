@@ -55,7 +55,6 @@ data Type (n : ℕ) : Set where
    leaf : Type n -- base case の型
    _fork_ : (s t : Type n) → Type n -- arrow 型
 --    ∀regs : reg n → Type n
-
 data scheme (n : ℕ) : Set where
    τ : Type n → scheme n
    ατ : (a : Fin (Data.Nat._+_ n 1)) → (scheme (Data.Nat._+_ n 1)) → scheme n
