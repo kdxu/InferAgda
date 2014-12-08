@@ -13,8 +13,8 @@ let add env key value = (key, value) :: env
 let rec get env key = match env with
     [] -> raise (UnboundVariable key)
   | (first_key, first_value) :: rest ->
-	if key = first_key then first_value
-			   else get rest key
+	if key = first_key then first_value else get rest key
+	  
 
 (* ·¿ *)
 type t = Int | Fun of t * t | Type_Var of t option ref | Boolean
@@ -53,8 +53,9 @@ let rec deref_type t = match t with
 		      | Some (t') -> let t'' = deref_type t' in
 				     r := Some (t'');
 				     t''
-		      
-
+		    
+let rec f a b = a + b 
+				       
 (* (ÊÑ¿ô, ·¿) ¤Î·¿¤ò deref ¤¹¤ë *)
 (* deref_id_type : (string * t) -> (string * t) *)
 let rec deref_id_type (x, t) = (x, deref_type t)

@@ -43,7 +43,7 @@ lrf2 f = cf2 (rf2 (lf2 f))
 record ⊤ : Set where
 
 empty : Fin zero → Set
-empty x = ⊤
+empty x = ⊥
 
 
 Fin' : ℕ →  Set

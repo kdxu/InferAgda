@@ -54,10 +54,11 @@ data Type (n : ℕ) : Set where
    ι : (x : Fin n) → Type n -- 変数 (de bruijn index) 
    leaf : Type n -- base case の型
    _fork_ : (s t : Type n) → Type n -- arrow 型
---    ∀regs : reg n → Type n
-data scheme (n : ℕ) : Set where
-   τ : Type n → scheme n
-   ατ : (a : Fin (Data.Nat._+_ n 1)) → (scheme (Data.Nat._+_ n 1)) → scheme n
+--   ∀regs : reg n → Type n
+
+--data Scheme (n : ℕ) : Set where
+--   τ : Type n → scheme n
+--   ατ : (a : Fin (Data.Nat._+_ n 1)) → (scheme (Data.Nat._+_ n 1)) → scheme n
 
 
 ▹ : {n m : ℕ} → (r : Fin m → Fin n) → (Fin m → Type n)
