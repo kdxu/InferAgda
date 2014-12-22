@@ -1,32 +1,21 @@
 module lib where
 
-open import Relation.Binary.PropositionalEquality
 open import Data.Nat
 open import Data.Product
 open import Data.Fin
 open import Data.Maybe
-open import Function
+open import Function using (_∘_)
+
+open import Relation.Binary.PropositionalEquality
+-- open import Relation.Binary.HeterogeneousEquality
 
 ---------------------------------------------------------------
-
--- lf : {S T : Set} → (f : S → T) → (S → Maybe T)
--- lf f = λ x → just (f x)
--- rf : {S T : Set} → (f : S → Maybe T) → (Maybe S → Maybe T)
--- rf f nothing = nothing
--- rf f (just x) = f x
--- lrf :{S T : Set} → (f : S → T) → (Maybe S → Maybe T)
--- lrf f = rf (lf f)
-
--- p5
 
 -- Type n : 最大で n 個の型変数を持つ型を表す型。
 data Type (n : ℕ) : Set where
   TVar : (x : Fin n) → Type n -- 型変数 (de Bruijn index) 
   TInt : Type n -- base case の型
   _⇒_ : (s t : Type n) → Type n -- arrow 型
-
--- ▹ : {n m : ℕ} → (r : Fin m → Fin n) → (Fin m → Type n)
--- ▹ r = TVar ∘ r
 
 -- f ◃ t : 型 t 中の型変数部分に f を施した型を返す
 _◃_ : {n m : ℕ} → (f : Fin m → Type n) → (Type m → Type n)
@@ -38,22 +27,15 @@ _◃_ f (s ⇒ t) = (f ◃ s) ⇒ (f ◃ t)
 _◃ : {n m : ℕ} → (f : Fin m → Type n) → (Type m → Type n)
 f ◃ = λ x → f ◃ x
 
--- Infer.agda でのみ使う
+-- 型の中の全ての型変数に f を施す（Infer.agda でのみ使う）
 ▹◃ :  {n m : ℕ} → (f : Fin m → Fin n) → (Type m → Type n)
 ▹◃ f = (TVar ∘ f) ◃
--- ▹◃ f = (▹ f) ◃
 
--- _≐_ : {n m : ℕ} → (f g : Fin m → Type n) → Set
--- _≐_ {n} {m} f g = (x : Fin m) → f x ≡ g x
-
--- 下の sub を通して Infer.agda でのみ使う
-_◇_ : {m n l : ℕ} → (f : Fin m → Type n) → (g : Fin l → Type m) → (Fin l → Type n)
-f ◇ g = (f ◃) ∘ g
-
--- (TVar s) ⇒ (TVar t) -> TVar (s ⇒ t) = s ⇒ t
--- TVar s = s
--- TVar t = t
--- p9
+-- 全ての型変数に TVar を付け直すだけなら変化なし（Infer.agda でのみ使う）
+TVarId : {m : ℕ} → (t : Type m) → TVar ◃ t ≡ t
+TVarId (TVar x) = refl
+TVarId TInt = refl
+TVarId (t1 ⇒ t2) = cong₂ _⇒_ (TVarId t1) (TVarId t2)
 
 -- thin x y : 変数 y を x の位置で「薄める」
 -- （x 未満の変数はそのまま。x 以上の変数は +1 される。
@@ -103,20 +85,17 @@ data AList : ℕ → ℕ → Set where
               (x : Fin (suc m)) → AList (suc m) n
           -- x を t' にした上で、さらにσを行う代入
 
--- _asnoc'_/_ : {m : ℕ} → (a : ∃ (AList m)) → (t' : Type m)  → (x : Fin (suc m)) → ∃ (AList (suc m))
--- ( s , t ) asnoc' t' / x = ( s , t asnoc t' / x )
-
--- Infer.agda でのみ使う
+-- 型変数に代入σを施す（Infer.agda でのみ使う）
 sub : {m n : ℕ} → (σ : AList m n) → Fin m → Type n
-sub anil = TVar --m≡nなら何もしない
+sub anil = TVar
 sub (σ asnoc t' / x) = (sub σ) ◇ (t' for x)
+  where _◇_ : {m n l : ℕ} → (f : Fin m → Type n) → (g : Fin l → Type m) → (Fin l → Type n)
+        f ◇ g = (f ◃) ∘ g
 
--- Infer.agda でのみ使う
+-- ふたつの代入をくっつける（Infer.agda でのみ使う）
 _⊹⊹_ : {l m n : ℕ} → (ρ : AList m n) → (σ : AList l m) →  AList l n
 ρ ⊹⊹ anil = ρ
 ρ ⊹⊹ (alist asnoc t / x) = (ρ ⊹⊹ alist) asnoc t / x
-
--- p14
 
 -- 型変数 x と y を unify する代入を返す 
 flexFlex : {m : ℕ} → (x y : Fin m) → Σ[ n ∈ ℕ ] AList m n
@@ -150,7 +129,6 @@ amgu {suc m} s t (n , σ asnoc r / z)
   with amgu {m} ((r for z) ◃ s) ((r for z) ◃ t) (n , σ)
 ... | just (n' , σ') = just (n' , σ' asnoc r / z)
 ... | nothing = nothing
---  lrf (λ σ₁ → σ₁ asnoc' r / z) (amgu {m} ((r for z) ◃ s) ((r for z) ◃ t) (n , σ))
 
 -- 型 s と t を unify する代入を返す
 mgu : {m : ℕ} → (s t : Type m) → Maybe (Σ[ n ∈ ℕ ] AList m n)
