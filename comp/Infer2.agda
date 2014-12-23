@@ -323,9 +323,32 @@ substConsCommute : ∀ {m m' n} (eq : m ≡ m') (t : Type m) (Γ : Cxt {m} n) �
                    subst Type eq t ∷ subst (λ m → Cxt {m} n) eq Γ
 substConsCommute refl t Γ = refl
 
+substTVarCommute : ∀ {m m'} (eq : m ≡ m') (x : Fin m) →
+                   subst Type eq (TVar x) ≡ TVar (subst Fin eq x)
+substTVarCommute refl x = refl
+
+substInject1Commute : ∀ {m m'} (eq : m ≡ m') (x : Fin m) →
+                      subst Fin (cong suc eq) (inject₁ x) ≡ inject₁ (subst Fin eq x)
+substInject1Commute refl x = refl
+
 substArrowCommute : ∀ {m m'} (eq : m ≡ m') (t1 t2 : Type m) →
                     subst Type eq (t1 ⇒ t2) ≡ subst Type eq t1 ⇒ subst Type eq t2
 substArrowCommute refl t1 t2 = refl
+
+injectAdd' : ∀ {m} m1 m2 → (x : Fin m) →
+             inject+' m1 (inject+' m2 x) ≡ subst Fin (+-assoc m1 m2 m) (inject+' (m1 + m2) x)
+injectAdd' zero m2 x = refl
+injectAdd' {m} (suc m1) m2 x rewrite substInject1Commute (+-assoc m1 m2 m) (inject+' (m1 + m2) x) =
+  cong inject₁ (injectAdd' m1 m2 x)
+
+liftTypeAdd' : ∀ {m} m1 m2 → (t : Type m) →
+               liftType m1 (liftType m2 t) ≡ subst Type (+-assoc m1 m2 m) (liftType (m1 + m2) t)
+liftTypeAdd' {m} m1 m2 (TVar x)
+  rewrite injectAdd' m1 m2 x | substTVarCommute (+-assoc m1 m2 m) (inject+' (m1 + m2) x) = refl
+liftTypeAdd' {m} m1 m2 TInt rewrite +-assoc m1 m2 m = refl
+liftTypeAdd' {m} m1 m2 (t1 ⇒ t2)
+  rewrite substArrowCommute (+-assoc m1 m2 m) (liftType (m1 + m2) t1) (liftType (m1 + m2) t2) =
+  cong₂ _⇒_ (liftTypeAdd' m1 m2 t1) (liftTypeAdd' m1 m2 t2)
 
 thickInject1 : ∀ {n} (x y : Fin (suc n)) →
                (thick x y ≡ nothing × thick (inject₁ x) (inject₁ y) ≡ nothing) ⊎
@@ -346,48 +369,70 @@ AListNoLess (σ asnoc t' / x) = ≤′-step (AListNoLess σ)
 mutual
   liftSub1Commute : ∀ {m' m} (σ : AList m' m) (x : Fin m') →
                     liftType 1 (sub σ x) ≡ sub (liftAList1 σ) (inject₁ x)
-  liftSub1Commute σ x with AListNoLess σ
-  ... | ≤′-refl = {!!}
-  ... | ≤′-step a = {!!}
+--   liftSub1Commute σ x with AListNoLess σ
+--   ... | ≤′-refl = {!!}
+--   ... | ≤′-step a = {!!}
 --  liftSub1Commute {zero} anil x = refl
 --  liftSub1Commute {zero} (σ asnoc t' / x) x₁ = {!!}
 --  liftSub1Commute {suc s} σ x = {!!}
 --  以下の定義は termination check にひっかかる。AList の長さについて再帰したいが、
 --  AList (s + m) m の s で再帰するのではうまくいかない。AList の定義を変更しなくてはだめか。
---  liftSub1Commute anil x = refl
---  liftSub1Commute {suc s} (σ asnoc t / y) x with thickInject1 y x
---  ... | inj₁ (eq1 , eq2) rewrite eq1 | eq2 = liftSubstCommute {s} (suc zero) σ t
---  ... | inj₂ (x' , eq1 , eq2) rewrite eq1 | eq2 = liftSub1Commute σ x'
+--  と思ったが、1 の場合だけを切り出して、相互再帰させたらうまくいった！！！
+  liftSub1Commute anil x = refl
+  liftSub1Commute (σ asnoc t / y) x with thickInject1 y x
+  ... | inj₁ (eq1 , eq2) rewrite eq1 | eq2 = liftSubst1Commute σ t
+  ... | inj₂ (x' , eq1 , eq2) rewrite eq1 | eq2 = liftSub1Commute σ x'
 
-  liftSubCommute : ∀ {m' m} c (σ : AList m' m) (x : Fin m') →
-                   liftType c (sub σ x) ≡ sub (liftAList c σ) (inject+' c x)
-  liftSubCommute zero σ x rewrite TVarId (sub σ x) = refl
-  liftSubCommute (suc c) σ x =
-    begin
-      liftType (suc c) (sub σ x)
-    ≡⟨ sym (≅-to-≡ (liftTypeAdd 1 c (sub σ x))) ⟩
-      liftType 1 (liftType c (sub σ x))
-    ≡⟨ cong (liftType 1) (liftSubCommute c σ x) ⟩
-      liftType 1 (sub (liftAList c σ) (inject+' c x))
-    ≡⟨ liftSub1Commute (liftAList c σ) (inject+' c x) ⟩
-      sub (liftAList1 (liftAList c σ)) (inject₁ (inject+' c x))
-    ∎
+  liftSubst1Commute : ∀ {m' m} (σ : AList m' m) (t : Type m') →
+                     liftType 1 (substType σ t) ≡ substType (liftAList1 σ) (liftType 1 t)
+  liftSubst1Commute σ (TVar x) = liftSub1Commute σ x
+  liftSubst1Commute σ TInt = refl
+  liftSubst1Commute σ (t1 ⇒ t2) = cong₂ _⇒_ (liftSubst1Commute σ t1) (liftSubst1Commute σ t2)
 
-  liftSubstCommute : ∀ {m' m} c (σ : AList m' m) (t : Type m') →
-                     liftType c (substType σ t) ≡ substType (liftAList c σ) (liftType c t)
-  liftSubstCommute c σ (TVar x) = liftSubCommute c σ x
-  liftSubstCommute c σ TInt = refl
-  liftSubstCommute c σ (t1 ⇒ t2) = cong₂ _⇒_ (liftSubstCommute c σ t1) (liftSubstCommute c σ t2)
+liftSubCommute : ∀ {m' m} c (σ : AList m' m) (x : Fin m') →
+                 liftType c (sub σ x) ≡ sub (liftAList c σ) (inject+' c x)
+liftSubCommute zero σ x rewrite TVarId (sub σ x) = refl
+liftSubCommute (suc c) σ x =
+  begin
+    liftType (suc c) (sub σ x)
+  ≡⟨ sym (≅-to-≡ (liftTypeAdd 1 c (sub σ x))) ⟩
+    liftType 1 (liftType c (sub σ x))
+  ≡⟨ cong (liftType 1) (liftSubCommute c σ x) ⟩
+    liftType 1 (sub (liftAList c σ) (inject+' c x))
+  ≡⟨ liftSub1Commute (liftAList c σ) (inject+' c x) ⟩
+    sub (liftAList1 (liftAList c σ)) (inject₁ (inject+' c x))
+  ∎
+
+liftSubstCommute : ∀ {m' m} c (σ : AList m' m) (t : Type m') →
+                   liftType c (substType σ t) ≡ substType (liftAList c σ) (liftType c t)
+liftSubstCommute c σ (TVar x) = liftSubCommute c σ x
+liftSubstCommute c σ TInt = refl
+liftSubstCommute c σ (t1 ⇒ t2) = cong₂ _⇒_ (liftSubstCommute c σ t1) (liftSubstCommute c σ t2)
+
+mutual
+  substVarAdd : ∀ {m m2 m1} (σ2 : AList m1 m2) (σ1 : AList m m1) (x : Fin m) →
+                sub σ2 ◃ sub σ1 x ≡ sub (σ2 ⊹⊹ σ1) x
+  substVarAdd σ2 anil x = refl
+  substVarAdd σ2 (σ1 asnoc t / y) x with thick y x
+  ... | nothing = substTypeAdd σ2 σ1 t
+  ... | just x' = substVarAdd σ2 σ1 x'
+
+  substTypeAdd : ∀ {m m2 m1} (σ2 : AList m1 m2) (σ1 : AList m m1) (t : Type m) →
+                 substType σ2 (substType σ1 t) ≡ substType (σ2 ⊹⊹ σ1) t
+  substTypeAdd σ2 σ1 (TVar x) = substVarAdd σ2 σ1 x
+  substTypeAdd σ2 σ1 TInt = refl
+  substTypeAdd σ2 σ1 (t1 ⇒ t2) = cong₂ _⇒_ (substTypeAdd σ2 σ1 t1) (substTypeAdd σ2 σ1 t2)
 
 substLiftTypeAdd : ∀ {m m2 m1} c2 c1 (σ2 : AList (c2 + m1) m2) (σ1 : AList (c1 + m) m1) (t : Type m) →
                    substType σ2 (liftType c2 (substType σ1 (liftType c1 t))) ≅
                    substType (σ2 ⊹⊹ liftAList c2 σ1)
                              (subst Type (+-assoc c2 c1 m) (liftType (c2 + c1) t))
-substLiftTypeAdd {m} c2 c1 σ2 σ1 (TVar x) = {!!}
-substLiftTypeAdd {m} c2 c1 σ2 σ1 TInt rewrite +-assoc c2 c1 m = hrefl
-substLiftTypeAdd {m} c2 c1 σ2 σ1 (t1 ⇒ t2)
-  rewrite substArrowCommute (+-assoc c2 c1 m) (liftType (c2 + c1) t1) (liftType (c2 + c1) t2) =
-  hcong₂ _⇒_ (substLiftTypeAdd c2 c1 σ2 σ1 t1) (substLiftTypeAdd c2 c1 σ2 σ1 t2)
+substLiftTypeAdd {m} c2 c1 σ2 σ1 t
+  rewrite liftSubstCommute c2 σ1 (liftType c1 t)
+        | liftTypeAdd' c2 c1 t
+        | substTypeAdd σ2 (liftAList c2 σ1) (subst Type (+-assoc c2 c1 m)
+                                                     ((λ x → TVar (inject+' (c2 + c1) x)) ◃ t))
+  = hrefl
 
 substLiftCxtAdd : ∀ {m n m2 m1} c2 c1 (σ2 : AList (c2 + m1) m2) (σ1 : AList (c1 + m) m1) (Γ : Cxt {m} n) →
                substCxt σ2 (liftCxt c2 (substCxt σ1 (liftCxt c1 Γ))) ≅
@@ -397,8 +442,6 @@ substLiftCxtAdd {m} c2 c1 σ2 σ1 [] rewrite +-assoc c2 c1 m = hrefl
 substLiftCxtAdd {m} {suc n} c2 c1 σ2 σ1 (t ∷ Γ)
   rewrite substConsCommute (+-assoc c2 c1 m) (liftType (c2 + c1) t) (liftCxt (c2 + c1) Γ) =
   hcong₂ _∷_ (substLiftTypeAdd c2 c1 σ2 σ1 t) (substLiftCxtAdd c2 c1 σ2 σ1 Γ)
-
-{-
 
 infer : {m n : ℕ} → (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
         Maybe (Σ[ m' ∈ ℕ ]
@@ -452,7 +495,7 @@ infer {m} {n} Γ (App s1 s2)
         AppW1W2 = App w1' w2'
                   where w1' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
                                             (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
-                        w1' = {!!}
+                        w1' = {!σ1!}
                         w1o : WellTypedTerm (substCxt σ1 (liftCxt (count s1) Γ)) t1
                         w1o = w1
                         -- σ1 : AList (count s1 + m) m1
@@ -482,4 +525,3 @@ infer {m} {n} Γ (App s1 s2)
                         w2' = hsubst (λ Γ → WellTypedTerm Γ (substType σ3 (liftType 1 t2)))
                                      eq w2o3
 -- hsubst' _ refl P hrefl x = x
--}
