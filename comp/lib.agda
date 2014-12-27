@@ -97,6 +97,8 @@ _⊹⊹_ : {l m n : ℕ} → (ρ : AList m n) → (σ : AList l m) →  AList l 
 ρ ⊹⊹ anil = ρ
 ρ ⊹⊹ (alist asnoc t / x) = (ρ ⊹⊹ alist) asnoc t / x
 
+
+
 -- 型変数 x と y を unify する代入を返す 
 flexFlex : {m : ℕ} → (x y : Fin m) → Σ[ n ∈ ℕ ] AList m n
 flexFlex {zero} () y
