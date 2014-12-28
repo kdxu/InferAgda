@@ -24,6 +24,9 @@ private module M = IsCommutativeSemiring
 +-right-identity : ∀ n → n + 0 ≡ n
 +-right-identity = proj₂ (M.+-identity isCommutativeSemiring)
 
++-left-identity : ∀ n → 0 + n ≡ n
++-left-identity = proj₁ (M.+-identity isCommutativeSemiring)
+
 +-assoc : ∀ m n o → (m + n) + o ≡  m + (n + o)
 +-assoc = M.+-assoc isCommutativeSemiring
 
@@ -33,6 +36,9 @@ private module M = IsCommutativeSemiring
 +-suc : ∀ m n → m + suc n ≡ suc (m + n)
 +-suc zero n = refl
 +-suc (suc m) n = cong suc (+-suc m n)
+
+suc+-lem : ∀ m n l →  suc (l + (n + m)) ≡ n + (suc l) + m
+suc+-lem m n l rewrite +-suc n l | sym (+-assoc l n m) | +-comm n l = refl
 
 -- +-suc m n rewrite +-comm m n = +-comm m (suc n)
 
@@ -464,15 +470,48 @@ anilLem : {m n : ℕ} → (ρ : AList m n) → (anil ⊹⊹ ρ ≡ ρ)
 anilLem anil = refl
 anilLem (r asnoc t' / x) = cong (λ x₁ → x₁ asnoc t' / x) (anilLem r)
 
-lift1SucLem : ∀{m m1 m2 : ℕ} →   (σ1 : AList m m1) → (σ2 : AList m1 m2) 
+lift1SucLem : ∀{m m1 m2 : ℕ} → (σ1 : AList m m1) → (σ2 : AList m1 m2) 
            →  liftAList1 (σ2 ⊹⊹ σ1) ≅ liftAList1 σ2 ⊹⊹ liftAList1 σ1
 lift1SucLem anil σ2 = hrefl
 lift1SucLem (t asnoc t' / x) σ2 = hcong (λ x₁ → x₁ asnoc liftType 1 t' / inject₁ x) (lift1SucLem t σ2)
+
+liftAListanil : ∀{m n} → liftAList {m} n anil ≅  anil
+liftAListanil {m} {zero} = hrefl
+liftAListanil {m} {suc n} = hcong (liftAList1) (liftAListanil {m} {n})
+
 
 lift1Suc : ∀{m m1 m2 : ℕ} →  (c1 c2 : ℕ) → (σ1 : AList (c1 + m) m1) → (σ2 : AList (c2 + m1) m2) 
            →  (liftAList 1 (σ2 ⊹⊹ (liftAList c2 σ1))) ≅ ((liftAList 1 σ2) ⊹⊹ (liftAList (suc c2)) σ1)
 lift1Suc c1 c2 σ1 σ2 rewrite (anilLem (liftAList1 (liftAList1 (liftAList c2 σ1)))) = lift1SucLem (liftAList c2 σ1) σ2
 
+
+
+--lift2Suc : ∀{m n m1 m2 m3 : ℕ} →  (c1 c2 : ℕ) →  (σ1 : AList (c1 + m) m1) → (σ2 : AList (c2 + m1) m2) →  (Γ : Cxt {m} n) → substCxt (((liftAList 1 σ2) ⊹⊹ (liftAList (suc c2) σ1))) (liftCxt 1 (liftCxt c2 (liftCxt c1 Γ))) ≅ substCxt (((liftAList 1 σ2) ⊹⊹ (liftAList (suc c1) σ1) ))  (liftCxt (c1  + suc c2) Γ)
+--lift2Suc {m} c1 c2 σ1 σ2  [] = hrefl
+--lift2Suc {m} c1 c2 σ1 σ2  (x ∷ Γ)  = {!!}
+
+liftCxtAddEqLem : ∀(c1 c2 : ℕ) → (1 + c2) + c1 ≡ (c1 + suc c2)
+liftCxtAddEqLem c1 c2 rewrite +-comm c2 c1 = sym (+-suc c1 c2)
+
+liftCxtAddEq : ∀{m n : ℕ} →  (c1 c2 : ℕ) → (Γ : Cxt {m} n) → liftCxt 1 (liftCxt c2 (liftCxt c1 Γ)) ≅ liftCxt (c1 + suc c2) Γ
+liftCxtAddEq {m} {n} c1 c2 Γ  =
+                           H.begin
+                             liftCxt 1 (liftCxt c2 (liftCxt c1 Γ))
+                           H.≅⟨ liftCxtAdd 1 c2 (liftCxt c1 Γ) ⟩
+                             liftCxt (1 + c2) (liftCxt c1 Γ)
+                           H.≅⟨ liftCxtAdd (1 + c2) c1 Γ ⟩
+                             liftCxt ((1 + c2) + c1) Γ
+                           H.≅⟨ hcong (λ x → liftCxt x Γ) (≡-to-≅ (liftCxtAddEqLem c1 c2)) ⟩
+                             liftCxt (c1 + suc c2) Γ                    
+                            
+                           H.∎
+
+substLiftCxtEq : ∀{m m1 m2 n : ℕ} → {σ1 : AList m1 m} → {σ2 : AList m2 m} →
+                                       {Γ1 : Cxt {m1} n} → {Γ2 : Cxt {m2} n} → m1 ≡ m2 →
+                                                 σ1 ≅ σ2 → Γ1 ≅ Γ2 →
+                                                   substCxt σ1 Γ1 ≅ substCxt σ2 Γ2
+substLiftCxtEq refl hrefl hrefl = hrefl
+ 
 infer : {m n : ℕ} → (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
          Maybe (Σ[ m' ∈ ℕ ]
                 Σ[ σ ∈ AList (count s + m) m' ]
@@ -525,15 +564,9 @@ infer {m} {n} Γ (App s1 s2)
         AppW1W2 = App w1' w2'
                   where w1' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
                                             (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
-                        w1' = {!!}
+                        w1' =  -- substWTerm (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftWTerm (count (App s1 s2)) {!!})
                         w1o : WellTypedTerm (substCxt σ1 (liftCxt (count s1) Γ)) t1
                         w1o = w1
-                        -- σ1 : AList (count s1 + m) m1
-                        -- σ1': AList (count s1 + suc (count s2) + m) (suc (count s2 + m1))
-                        -- σ2 : AList (count s2 + m1) m2
-                        -- σ2': AList (suc (count s2 + m1)) (suc m2)
-                        -- σ3 : AList (suc m2) m3
-                        -- σ2' ⊹⊹ σ1' : AList (count s1 + suc (count s2) + m) (suc m2)
                         Γ1 : Cxt {m1} n
                         Γ1 = substCxt σ1 (liftCxt (count s1) Γ)
                         Γ2 : Cxt {m2} n
@@ -550,8 +583,13 @@ infer {m} {n} Γ (App s1 s2)
                         w2o2 = liftWTerm 1 w2
                         w2o3 : WellTypedTerm (substCxt σ3 (liftCxt 1 Γ2)) (substType σ3 (liftType 1 t2))
                         w2o3 = substWTerm σ3 (liftWTerm 1 w2)
+                        
+
+                        eqσ :  liftAList (suc (count s2)) σ1　≅  σ1'
+                        eqσ rewrite +-comm (count s1) (suc (count s2)) | +-assoc (count s2) (count s1) m = hrefl
+
                         eq : Γ3 ≅ Γ4
-                        eq =
+                        eq  =
                
                           H.begin
                             Γ3
@@ -570,7 +608,7 @@ infer {m} {n} Γ (App s1 s2)
                             substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ (liftAList (suc (count s2)) σ1))) (liftCxt 1 (liftCxt (count s2) (liftCxt (count s1) Γ)))
  
 
-                          H.≅⟨ {! !} ⟩
+                          H.≅⟨ substLiftCxtEq  (suc+-lem m (count s1) (count s2)) (hcong' (λ m₁ → AList m₁ (suc (count s2 + m1))) (suc+-lem m (count s1) (count s2)) (λ x → σ3 ⊹⊹ (σ2' ⊹⊹ x)) eqσ) (liftCxtAddEq (count s1) (count s2) Γ) ⟩
                             substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1'))  (liftCxt ((count s1)  + suc (count s2)) Γ)                           
                           H.≅⟨ hrefl ⟩
                             Γ4
@@ -582,13 +620,5 @@ infer {m} {n} Γ (App s1 s2)
                                             (substType σ3 (liftType 1 t2))
                         w2' = hsubst (λ Γ → WellTypedTerm Γ (substType σ3 (liftType 1 t2)))
                                      eq w2o3
-
-
-                        -- σ1 : AList (count s1 + m) m1
-                        -- σ1': AList (count s1 + suc (count s2) + m) (suc (count s2 + m1))
-                        -- σ2 : AList (count s2 + m1) m2
-                        -- σ2': AList (suc (count s2 + m1)) (suc m2)
-                        -- σ3 : AList (suc m2) m3
-                        -- σ2' ⊹⊹ σ1' : AList (count s1 + suc (count s2) + m) (suc m2)
 
            
