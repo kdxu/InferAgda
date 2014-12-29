@@ -563,11 +563,12 @@ infer {m} {n} Γ (App s1 s2)
                         Γ4 : Cxt {m3} n
                         Γ4 = substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ)
                        -- w1' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
-                                         --   (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
-                        w1o : WellTypedTerm (liftCxt (count s2) Γ1) (liftType (count s2) t1)
-                        w1o = liftWTerm (count s2) w1
+                        w1o : WellTypedTerm (substCxt σ1 (liftCxt (count s1) Γ)) t1
+                        w1o = w1
+                        w1o1 : WellTypedTerm (liftCxt (count s2) Γ1) (liftType (count s2) t1)
+                        w1o1 = liftWTerm (count s2) w1
                         w1o2 : WellTypedTerm (substCxt σ2 (liftCxt (count s2) Γ1)) (substType σ2 (liftType (count s2) t1))
-                        w1o2 = substWTerm σ2 w1o
+                        w1o2 = substWTerm σ2 w1o1
                         w1o3 : WellTypedTerm (liftCxt 1 (substCxt σ2 (liftCxt (count s2) Γ1))) (liftType 1 (substType σ2 (liftType (count s2) t1)))
                         w1o3 = liftWTerm 1 w1o2
                         w1o4 : WellTypedTerm (substCxt σ3 (liftCxt 1 (substCxt σ2 (liftCxt (count s2) Γ1)))) (substType σ3 (liftType 1 (substType σ2 (liftType (count s2) t1))))
