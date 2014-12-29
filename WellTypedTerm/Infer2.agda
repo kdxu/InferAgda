@@ -463,9 +463,6 @@ substLiftCxtAdd2 : ∀ {m n m2 m1} c2 c1 (σ2 : AList (c2 + m1) m2) (σ1 : AList
 substLiftCxtAdd2 c2 c1 σ2 σ1 [] = hrefl
 substLiftCxtAdd2 {m} {suc n} c2 c1 σ2 σ1 (t ∷ Γ) rewrite substLiftCommute c2 c1 σ2 σ1 Γ =  htrans (substLiftCxtAdd c2 c1 σ2 σ1 (t ∷ Γ)) (hcong (λ x → substCxt (σ2 ⊹⊹ liftAList c2 σ1) x) (≡-to-≅ (substLiftCommute c2 c1 σ2 σ1 (t ∷ Γ))))
 
---+-suc : ∀ m n → m + suc n ≡ suc (m + n)
---+-suc zero n = refl
---+-suc (suc m) n = cong suc (+-suc m n)
 anilLem : {m n : ℕ} → (ρ : AList m n) → (anil ⊹⊹ ρ ≡ ρ) 
 anilLem anil = refl
 anilLem (r asnoc t' / x) = cong (λ x₁ → x₁ asnoc t' / x) (anilLem r)
@@ -483,12 +480,6 @@ liftAListanil {m} {suc n} = hcong (liftAList1) (liftAListanil {m} {n})
 lift1Suc : ∀{m m1 m2 : ℕ} →  (c1 c2 : ℕ) → (σ1 : AList (c1 + m) m1) → (σ2 : AList (c2 + m1) m2) 
            →  (liftAList 1 (σ2 ⊹⊹ (liftAList c2 σ1))) ≅ ((liftAList 1 σ2) ⊹⊹ (liftAList (suc c2)) σ1)
 lift1Suc c1 c2 σ1 σ2 rewrite (anilLem (liftAList1 (liftAList1 (liftAList c2 σ1)))) = lift1SucLem (liftAList c2 σ1) σ2
-
-
-
---lift2Suc : ∀{m n m1 m2 m3 : ℕ} →  (c1 c2 : ℕ) →  (σ1 : AList (c1 + m) m1) → (σ2 : AList (c2 + m1) m2) →  (Γ : Cxt {m} n) → substCxt (((liftAList 1 σ2) ⊹⊹ (liftAList (suc c2) σ1))) (liftCxt 1 (liftCxt c2 (liftCxt c1 Γ))) ≅ substCxt (((liftAList 1 σ2) ⊹⊹ (liftAList (suc c1) σ1) ))  (liftCxt (c1  + suc c2) Γ)
---lift2Suc {m} c1 c2 σ1 σ2  [] = hrefl
---lift2Suc {m} c1 c2 σ1 σ2  (x ∷ Γ)  = {!!}
 
 liftCxtAddEqLem : ∀(c1 c2 : ℕ) → (1 + c2) + c1 ≡ (c1 + suc c2)
 liftCxtAddEqLem c1 c2 rewrite +-comm c2 c1 = sym (+-suc c1 c2)
@@ -564,7 +555,7 @@ infer {m} {n} Γ (App s1 s2)
         AppW1W2 = App w1' w2'
                   where w1' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
                                             (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
-                        w1' =  -- substWTerm (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftWTerm (count (App s1 s2)) {!!})
+                        w1' = {!!} -- substWTerm (σ3 x⊹⊹ (σ2' ⊹⊹ σ1')) (liftWTerm (count (App s1 s2)) {!!})
                         w1o : WellTypedTerm (substCxt σ1 (liftCxt (count s1) Γ)) t1
                         w1o = w1
                         Γ1 : Cxt {m1} n
