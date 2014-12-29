@@ -553,11 +553,7 @@ infer {m} {n} Γ (App s1 s2)
         AppW1W2 : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
                                 (substType σ3 (TVar (fromℕ m2)))
         AppW1W2 = App w1' w2'
-                  where w1' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
-                                            (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
-                        w1' = {!!} -- substWTerm (σ3 x⊹⊹ (σ2' ⊹⊹ σ1')) (liftWTerm (count (App s1 s2)) {!!})
-                        w1o : WellTypedTerm (substCxt σ1 (liftCxt (count s1) Γ)) t1
-                        w1o = w1
+                  where
                         Γ1 : Cxt {m1} n
                         Γ1 = substCxt σ1 (liftCxt (count s1) Γ)
                         Γ2 : Cxt {m2} n
@@ -566,15 +562,25 @@ infer {m} {n} Γ (App s1 s2)
                         Γ3 = substCxt σ3 (liftCxt 1 Γ2)
                         Γ4 : Cxt {m3} n
                         Γ4 = substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ)
-                        Γ5 : Cxt {suc m2} n
-                        Γ5 = substCxt (σ2' ⊹⊹ σ1') (liftCxt (count s1 + suc (count s2)) Γ)
+                       -- w1' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
+                                         --   (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
+                        w1o : WellTypedTerm (liftCxt (count s2) Γ1) (liftType (count s2) t1)
+                        w1o = liftWTerm (count s2) w1
+                        w1o2 : WellTypedTerm (substCxt σ2 (liftCxt (count s2) Γ1)) (substType σ2 (liftType (count s2) t1))
+                        w1o2 = substWTerm σ2 w1o
+                        w1o3 : WellTypedTerm (liftCxt 1 (substCxt σ2 (liftCxt (count s2) Γ1))) (liftType 1 (substType σ2 (liftType (count s2) t1)))
+                        w1o3 = liftWTerm 1 w1o2
+                        w1o4 : WellTypedTerm (substCxt σ3 (liftCxt 1 (substCxt σ2 (liftCxt (count s2) Γ1)))) (substType σ3 (liftType 1 (substType σ2 (liftType (count s2) t1))))
+                        w1o4 = substWTerm σ3 w1o3
+                        
+                      --  w1o3 : WellTypedTerm (substCxt {!!} (liftCxt {!!} Γ1)) (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
+                      --   w1o3 = substWTerm σ3 (liftWTerm {!!} {!w1o2!})
                         w2o : WellTypedTerm Γ2 t2
                         w2o = w2
                         w2o2 : WellTypedTerm (liftCxt 1 Γ2) (liftType 1 t2)
                         w2o2 = liftWTerm 1 w2
                         w2o3 : WellTypedTerm (substCxt σ3 (liftCxt 1 Γ2)) (substType σ3 (liftType 1 t2))
-                        w2o3 = substWTerm σ3 (liftWTerm 1 w2)
-                        
+                        w2o3 = substWTerm σ3 (liftWTerm 1 w2)              
 
                         eqσ :  liftAList (suc (count s2)) σ1　≅  σ1'
                         eqσ rewrite +-comm (count s1) (suc (count s2)) | +-assoc (count s2) (count s1) m = hrefl
@@ -606,7 +612,9 @@ infer {m} {n} Γ (App s1 s2)
                             
                           H.∎
                        
-                         
+                        w1' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
+                                            (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
+                        w1' = hsubst (λ Γ → WellTypedTerm Γ (substType σ3 (liftType 1 (t2 ⇒(TVar {!!}))))) {!!} {!w1o4!}
                         w2' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
                                             (substType σ3 (liftType 1 t2))
                         w2' = hsubst (λ Γ → WellTypedTerm Γ (substType σ3 (liftType 1 t2)))
