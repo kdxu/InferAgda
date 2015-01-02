@@ -499,6 +499,7 @@ substLiftCxtEq : ∀{m m1 m2 n : ℕ} → {σ1 : AList m1 m} → {σ2 : AList m2
                                                  σ1 ≅ σ2 → Γ1 ≅ Γ2 →
                                                    substCxt σ1 Γ1 ≅ substCxt σ2 Γ2
 substLiftCxtEq refl hrefl hrefl = hrefl
+
  
 infer : {m n : ℕ} → (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
          Maybe (Σ[ m' ∈ ℕ ]
@@ -609,13 +610,18 @@ infer {m} {n} Γ (App s1 s2)
                             Γ4
                             
                           H.∎
+                          
+                        σ3→Commute : (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2))) ≡ (substType σ3 (liftType 1 (substType σ2 (liftType (count s2) t1))))
+                        σ3→Commute = sym eq'
                        
                         w1' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
                                             (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
-                        w1' = hsubst (λ Γ → WellTypedTerm Γ (substType σ3 (liftType 1 (t2 ⇒ (TVar {!fromℕ!}))))) eq {!w1o4!}
+                        w1' rewrite σ3→Commute = hsubst (λ Γ → WellTypedTerm Γ (substType σ3 (liftType 1 (substType σ2 (liftType (count s2) t1))))) eq w1o4
+                        
                         w2' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
                                             (substType σ3 (liftType 1 t2))
                         w2' = hsubst (λ Γ → WellTypedTerm Γ (substType σ3 (liftType 1 t2)))
                                      eq w2o3
 
            
+
