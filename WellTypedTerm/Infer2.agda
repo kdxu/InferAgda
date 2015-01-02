@@ -100,10 +100,6 @@ liftAList (suc n) σ = liftAList1 (liftAList n σ)
 --   where x' : Fin (suc (n + m))
 --         x' rewrite sym (+-suc n m) = inject≤ x (n≤m+n n (suc m))
 
--- substType σ t : t に σ を適用した型を返す
-substType : {m m' : ℕ} → AList m m' → Type m → Type m' 
-substType σ t = sub σ ◃ t
-
 -- substCxt σ Γ : Γ に σ を適用した型環境を返す
 substCxt : {m m' n : ℕ} → AList m m' → Cxt {m} n → Cxt {m'} n 
 substCxt σ Γ = Data.Vec.map (substType σ) Γ 
@@ -155,8 +151,9 @@ substWTerm σ (Lam t w) = Lam (substType σ t) (substWTerm σ w)
 substWTerm σ (App w1 w2) = App (substWTerm σ w1) (substWTerm σ w2)
 
 -- unify t1 t2 : 型変数が m 個であるような型 t1 と t2 を unify する代入を返す
-unify : {m : ℕ} → Type m → Type m → Maybe (Σ[ n ∈ ℕ ] AList m n)
-unify {m} t1 t2 = mgu {m} t1 t2
+unify : {m : ℕ} → (s t : Type m) →
+       Maybe (Σ[ n ∈ ℕ ] Σ[ σ ∈ AList m n ] substType σ s ≡ substType σ t)
+unify {m} t1 t2 = mgu2 {m} t1 t2
 
 -- Well-scope な項の中の Lam と App のノード数を数える
 -- （その数が、新たに導入される型変数の数になる）
@@ -543,7 +540,7 @@ infer {m} {n} Γ (App s1 s2)
       with unify (liftType 1 (substType σ2 (liftType (count s2) t1))) -- t1
                  (liftType 1 t2 ⇒ TVar (fromℕ m2)) -- t2 ⇒ TVar (fromℕ m2)
 ... | nothing = nothing -- unify できなかった
-... | just (m3 , σ3) =
+... | just (m3 , σ3 , eq') =
   just (m3 , σ3 ⊹⊹ (σ2' ⊹⊹ σ1') , substType σ3 (TVar (fromℕ m2)) , AppW1W2) 
   where σ1' : AList (count s1 + suc (count s2) + m) (suc (count s2 + m1))
         σ1' rewrite +-comm (count s1) (suc (count s2)) | +-assoc (count s2) (count s1) m
@@ -571,7 +568,7 @@ infer {m} {n} Γ (App s1 s2)
                         w1o2 = substWTerm σ2 w1o1
                         w1o3 : WellTypedTerm (liftCxt 1 (substCxt σ2 (liftCxt (count s2) Γ1))) (liftType 1 (substType σ2 (liftType (count s2) t1)))
                         w1o3 = liftWTerm 1 w1o2
-                        w1o4 : WellTypedTerm (substCxt σ3 (liftCxt 1 (substCxt σ2 (liftCxt (count s2) Γ1)))) (substType σ3 (liftType 1 (substType σ2 (liftType (count s2) t1))))
+                        w1o4 : WellTypedTerm Γ3 (substType σ3 (liftType 1 (substType σ2 (liftType (count s2) t1))))
                         w1o4 = substWTerm σ3 w1o3
                         
                       --  w1o3 : WellTypedTerm (substCxt {!!} (liftCxt {!!} Γ1)) (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
@@ -615,7 +612,7 @@ infer {m} {n} Γ (App s1 s2)
                        
                         w1' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
                                             (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2)))
-                        w1' = hsubst (λ Γ → WellTypedTerm Γ (substType σ3 (liftType 1 (t2 ⇒(TVar {!!}))))) {!!} {!w1o4!}
+                        w1' = hsubst (λ Γ → WellTypedTerm Γ (substType σ3 (liftType 1 (t2 ⇒ (TVar {!fromℕ!}))))) eq {!w1o4!}
                         w2' : WellTypedTerm (substCxt (σ3 ⊹⊹ (σ2' ⊹⊹ σ1')) (liftCxt (count (App s1 s2)) Γ))
                                             (substType σ3 (liftType 1 t2))
                         w2' = hsubst (λ Γ → WellTypedTerm Γ (substType σ3 (liftType 1 t2)))
