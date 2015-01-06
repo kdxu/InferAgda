@@ -1,0 +1,901 @@
+\agdaIgnore{
+\begin{code}%
+\>\AgdaKeyword{module} \AgdaModule{lib} \AgdaKeyword{where}\<%
+\\
+%
+\\
+\>\AgdaKeyword{open} \AgdaKeyword{import} \AgdaModule{Data.Nat}\<%
+\\
+\>\AgdaKeyword{open} \AgdaKeyword{import} \AgdaModule{Data.Product}\<%
+\\
+\>\AgdaKeyword{open} \AgdaKeyword{import} \AgdaModule{Data.Fin} \AgdaKeyword{hiding} \AgdaSymbol{(}\_+\_\AgdaSymbol{)}\<%
+\\
+\>\AgdaKeyword{open} \AgdaKeyword{import} \AgdaModule{Data.Empty}\<%
+\\
+\>\AgdaKeyword{open} \AgdaKeyword{import} \AgdaModule{Data.Sum}\<%
+\\
+\>\AgdaKeyword{open} \AgdaKeyword{import} \AgdaModule{Data.Maybe}\<%
+\\
+\>\AgdaKeyword{open} \AgdaKeyword{import} \AgdaModule{Function} \AgdaKeyword{using} \AgdaSymbol{(}\_∘\_\AgdaSymbol{)}\<%
+\\
+%
+\\
+\>\AgdaKeyword{open} \AgdaKeyword{import} \AgdaModule{Relation.Binary.PropositionalEquality}\<%
+\\
+\>\AgdaKeyword{open} \AgdaModule{Relation.}\AgdaModule{Binary.}\AgdaModule{PropositionalEquality.}\AgdaModule{≡-Reasoning}\<%
+\\
+\>\AgdaComment{-- open import Relation.Binary.HeterogeneousEquality}\<%
+\\
+%
+\\
+\>\AgdaComment{---------------------------------------------------------------}\<%
+\\
+%
+\\
+%
+\\
+\>\AgdaComment{-- 変数 (Fin n) 関係}\<%
+\end{code}
+}
+\agdaSnippet\Thin{
+\begin{code}%
+\>\AgdaComment{-- thin x y : 変数 y を x の位置で「薄める」}\<%
+\\
+\>\AgdaComment{-- （x 未満の変数はそのまま。x 以上の変数は +1 される。}\<%
+\\
+\>\AgdaComment{--   thin の結果が x になることはない。）}\<%
+\\
+\>\AgdaFunction{thin} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{Fin} \AgdaBound{n} \AgdaSymbol{→} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{)} \<[52]%
+\>[52]\AgdaComment{-- thin <-> thick}\<%
+\\
+\>\AgdaFunction{thin} \AgdaSymbol{\{}\AgdaBound{n}\AgdaSymbol{\}} \AgdaInductiveConstructor{zero} \AgdaBound{y} \AgdaSymbol{=} \AgdaInductiveConstructor{suc} \AgdaBound{y}\<%
+\\
+\>\AgdaFunction{thin} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{x}\AgdaSymbol{)} \AgdaInductiveConstructor{zero} \AgdaSymbol{=} \AgdaInductiveConstructor{zero}\<%
+\\
+\>\AgdaFunction{thin} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{y}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaInductiveConstructor{suc} \AgdaSymbol{(}\AgdaFunction{thin} \AgdaBound{x} \AgdaBound{y}\AgdaSymbol{)}\<%
+\end{code}
+}
+\agdaSnippet\Thick{
+\begin{code}%
+\>\AgdaComment{-- thick x y : 変数 y を x の位置で「濃縮する」}\<%
+\\
+\>\AgdaComment{-- （x 未満の変数はそのまま。x より大きい変数は -1 される。}\<%
+\\
+\>\AgdaComment{--   x と y が同じ場合は濃縮できないので nothing が返る。）}\<%
+\\
+\>\AgdaFunction{thick} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{x} \AgdaBound{y} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{))} \AgdaSymbol{→} \AgdaDatatype{Maybe} \AgdaSymbol{(}\AgdaDatatype{Fin} \AgdaBound{n}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{thick} \AgdaSymbol{\{}\AgdaBound{n}\AgdaSymbol{\}} \AgdaInductiveConstructor{zero} \AgdaInductiveConstructor{zero} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing} \AgdaComment{-- x = y だった}\<%
+\\
+\>\AgdaFunction{thick} \AgdaSymbol{\{}\AgdaBound{n}\AgdaSymbol{\}} \AgdaInductiveConstructor{zero} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{y}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaBound{y} \AgdaComment{-- 濃縮する}\<%
+\\
+\>\AgdaFunction{thick} \AgdaSymbol{\{}\AgdaInductiveConstructor{zero}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{())} \AgdaInductiveConstructor{zero}\<%
+\\
+\>\AgdaFunction{thick} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{x}\AgdaSymbol{)} \AgdaInductiveConstructor{zero} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaInductiveConstructor{zero} \AgdaComment{-- x 未満なのでそのまま}\<%
+\\
+\>\AgdaFunction{thick} \AgdaSymbol{\{}\AgdaInductiveConstructor{zero}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{())} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{y}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{thick} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{y}\AgdaSymbol{)} \AgdaKeyword{with} \AgdaFunction{thick} \AgdaSymbol{\{}\AgdaBound{n}\AgdaSymbol{\}} \AgdaBound{x} \AgdaBound{y}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{x'} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{x'}\AgdaSymbol{)}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing} \AgdaComment{-- x = y だった}\<%
+\end{code}
+}
+\agdaSnippet\ThickxxNothing{
+\begin{code}%
+\>\AgdaComment{-- thick x x は必ず nothing になる}\<%
+\\
+\>\AgdaFunction{thickxx≡nothing} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{x} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{))} \AgdaSymbol{→} \AgdaFunction{thick} \AgdaBound{x} \AgdaBound{x} \AgdaDatatype{≡} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaFunction{thickxx≡nothing} \AgdaInductiveConstructor{zero} \AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\\
+\>\AgdaFunction{thickxx≡nothing} \AgdaSymbol{\{}\AgdaInductiveConstructor{zero}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{())}\<%
+\\
+\>\AgdaFunction{thickxx≡nothing} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{x}\AgdaSymbol{)} \AgdaKeyword{with} \AgdaFunction{thickxx≡nothing} \AgdaBound{x}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaBound{a} \AgdaKeyword{rewrite} \AgdaBound{a} \AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\end{code}
+}
+\agdaSnippet\Thickxy{
+\begin{code}%
+\>\AgdaComment{-- thick x y が nothing になったら x ≡ y}\<%
+\\
+\>\AgdaFunction{thickxy-x≡y} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{x} \AgdaBound{y} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{))} \AgdaSymbol{→} \AgdaFunction{thick} \AgdaBound{x} \AgdaBound{y} \AgdaDatatype{≡} \AgdaInductiveConstructor{nothing} \AgdaSymbol{→} \AgdaBound{x} \AgdaDatatype{≡} \AgdaBound{y}\<%
+\\
+\>\AgdaFunction{thickxy-x≡y} \AgdaInductiveConstructor{zero} \AgdaInductiveConstructor{zero} \AgdaBound{eq} \AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\\
+\>\AgdaFunction{thickxy-x≡y} \AgdaInductiveConstructor{zero} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{y}\AgdaSymbol{)} \AgdaSymbol{()}\<%
+\\
+\>\AgdaFunction{thickxy-x≡y} \AgdaSymbol{\{}\AgdaInductiveConstructor{zero}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{())} \AgdaInductiveConstructor{zero} \AgdaBound{eq}\<%
+\\
+\>\AgdaFunction{thickxy-x≡y} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{x}\AgdaSymbol{)} \AgdaInductiveConstructor{zero} \AgdaSymbol{()}\<%
+\\
+\>\AgdaFunction{thickxy-x≡y} \AgdaSymbol{\{}\AgdaInductiveConstructor{zero}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{())} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{y}\AgdaSymbol{)} \AgdaBound{eq}\<%
+\\
+\>\AgdaFunction{thickxy-x≡y} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{y}\AgdaSymbol{)} \AgdaBound{eq} \AgdaKeyword{with} \AgdaFunction{thick} \AgdaBound{x} \AgdaBound{y} \AgdaSymbol{|} \AgdaFunction{inspect} \AgdaSymbol{(}\AgdaFunction{thick} \AgdaBound{x}\AgdaSymbol{)} \AgdaBound{y}\<%
+\\
+\>\AgdaFunction{thickxy-x≡y} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{y}\AgdaSymbol{)} \AgdaSymbol{()} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{x'} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq'} \AgdaInductiveConstructor{]}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq'} \AgdaInductiveConstructor{]} \AgdaSymbol{=} \AgdaFunction{cong} \AgdaInductiveConstructor{suc} \AgdaSymbol{(}\AgdaFunction{thickxy-x≡y} \AgdaBound{x} \AgdaBound{y} \AgdaBound{eq'}\AgdaSymbol{)}\<%
+\end{code}
+}
+\agdaSnippet\InjectPlusDash{
+\begin{code}%
+\>\AgdaComment{-- inject+' n x : x の型を n だけ持ち上げる}\<%
+\\
+\>\AgdaComment{-- Fin の inject+ は結論部が Fin (m + n)}\<%
+\\
+\>\AgdaFunction{inject+'} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{n} \AgdaSymbol{→} \AgdaDatatype{Fin} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaBound{n} \AgdaPrimitive{+} \AgdaBound{m}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{inject+'} \AgdaInductiveConstructor{zero} \AgdaBound{m} \AgdaSymbol{=} \AgdaBound{m}\<%
+\\
+\>\AgdaFunction{inject+'} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{)} \AgdaBound{m} \AgdaSymbol{=} \AgdaFunction{inject₁} \AgdaSymbol{(}\AgdaFunction{inject+'} \AgdaBound{n} \AgdaBound{m}\AgdaSymbol{)}\<%
+\end{code}
+}
+
+\agdaSnippet\TypeDef{
+\begin{code}%
+\>\AgdaComment{-- Type n : 最大で n 個の型変数を持つ型を表す型。}\<%
+\\
+\>\AgdaKeyword{data} \AgdaDatatype{Type} \AgdaSymbol{(}\AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{)} \AgdaSymbol{:} \AgdaPrimitiveType{Set} \AgdaKeyword{where}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaInductiveConstructor{TVar} \AgdaSymbol{:} \AgdaSymbol{(}\AgdaBound{x} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n} \AgdaComment{-- 型変数 (de Bruijn index) }\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaInductiveConstructor{TInt} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{n} \AgdaComment{-- base case の型}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaInductiveConstructor{\_⇒\_} \AgdaSymbol{:} \AgdaSymbol{(}\AgdaBound{s} \AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n} \AgdaComment{-- arrow 型}\<%
+\\
+\>\<%
+\end{code}
+}
+\agdaIgnore{
+\begin{code}%
+\>\AgdaComment{-- f ◃ t : 型 t 中の型変数部分に f を施した型を返す}\<%
+\\
+\>\AgdaFunction{\_◃\_} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{n} \AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{f} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaDatatype{Type} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{\_◃\_} \AgdaBound{f} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaBound{f} \AgdaBound{x}\<%
+\\
+\>\AgdaFunction{\_◃\_} \AgdaBound{f} \AgdaInductiveConstructor{TInt} \AgdaSymbol{=} \AgdaInductiveConstructor{TInt}\<%
+\\
+\>\AgdaFunction{\_◃\_} \AgdaBound{f} \AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{⇒} \AgdaBound{t}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaBound{f} \AgdaFunction{◃} \AgdaBound{s}\AgdaSymbol{)} \AgdaInductiveConstructor{⇒} \AgdaSymbol{(}\AgdaBound{f} \AgdaFunction{◃} \AgdaBound{t}\AgdaSymbol{)} \<[34]%
+\>[34]\<%
+\\
+%
+\\
+\>\AgdaComment{-- f ◃ t : 型 t 中の型変数部分に f を施した型を返す}\<%
+\\
+\>\AgdaFunction{\_◃} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{n} \AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{f} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaDatatype{Type} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{)}\<%
+\\
+\>\AgdaBound{f} \AgdaFunction{◃} \AgdaSymbol{=} \AgdaSymbol{λ} \AgdaBound{x} \AgdaSymbol{→} \AgdaBound{f} \AgdaFunction{◃} \AgdaBound{x}\<%
+\\
+%
+\\
+\>\AgdaComment{-- 型の中の全ての型変数に f を施す}\<%
+\\
+\>\AgdaFunction{▹◃} \AgdaSymbol{:} \<[6]%
+\>[6]\AgdaSymbol{\{}\AgdaBound{n} \AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{f} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Fin} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaDatatype{Type} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{▹◃} \AgdaBound{f} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaFunction{∘} \AgdaBound{f}\AgdaSymbol{)} \AgdaFunction{◃}\<%
+\end{code}
+}
+\agdaSnippet\LiftType{
+\begin{code}%
+\>\AgdaComment{-- liftType m' t : t の中の型変数の数を m' だけ増やす}\<%
+\\
+\>\AgdaFunction{liftType} \AgdaSymbol{:} \AgdaSymbol{(}\AgdaBound{m'} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaSymbol{(}\AgdaBound{m'} \AgdaPrimitive{+} \AgdaBound{m}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{liftType} \AgdaBound{m'} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{t} \AgdaSymbol{=} \AgdaFunction{▹◃} \AgdaSymbol{(}\AgdaFunction{inject+'} \AgdaBound{m'}\AgdaSymbol{)} \AgdaBound{t}\<%
+\end{code}
+}
+\agdaSnippet\TVarId{
+\begin{code}%
+\>\AgdaComment{-- 全ての型変数に TVar を付け直すだけなら変化なし}\<%
+\\
+\>\AgdaFunction{TVarId} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaBound{t} \AgdaDatatype{≡} \AgdaBound{t}\<%
+\\
+\>\AgdaFunction{TVarId} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\\
+\>\AgdaFunction{TVarId} \AgdaInductiveConstructor{TInt} \AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\\
+\>\AgdaFunction{TVarId} \AgdaSymbol{(}\AgdaBound{t1} \AgdaInductiveConstructor{⇒} \AgdaBound{t2}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaFunction{cong₂} \AgdaInductiveConstructor{\_⇒\_} \AgdaSymbol{(}\AgdaFunction{TVarId} \AgdaBound{t1}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaFunction{TVarId} \AgdaBound{t2}\AgdaSymbol{)}\<%
+\end{code}
+}
+\agdaSnippet\CheckType{
+\begin{code}%
+\>\AgdaComment{-- check x t : x 番の型変数が型 t の中に現れるかをチェックする。}\<%
+\\
+\>\AgdaComment{-- 現れなければ、型 t を x で thick できるはずなので、それを返す。}\<%
+\\
+\>\AgdaComment{-- 現れたら、nothing を返す。}\<%
+\\
+\>\AgdaFunction{check} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{Maybe} \AgdaSymbol{(}\AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{check} \AgdaBound{x} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{y}\AgdaSymbol{)} \AgdaKeyword{with} \AgdaFunction{thick} \AgdaBound{x} \AgdaBound{y}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{y'} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{y'}\AgdaSymbol{)}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing} \AgdaComment{-- x が現れた（x = y だった）}\<%
+\\
+\>\AgdaFunction{check} \AgdaBound{x} \AgdaInductiveConstructor{TInt} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaInductiveConstructor{TInt}\<%
+\\
+\>\AgdaFunction{check} \AgdaBound{x} \AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{⇒} \AgdaBound{t}\AgdaSymbol{)} \AgdaKeyword{with} \AgdaFunction{check} \AgdaBound{x} \AgdaBound{s} \AgdaSymbol{|} \AgdaFunction{check} \AgdaBound{x} \AgdaBound{t}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{s'} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{t'} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{s'} \AgdaInductiveConstructor{⇒} \AgdaBound{t'}\AgdaSymbol{)}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{s'} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{t'} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\end{code}
+}
+\agdaSnippet\CheckInvArrow{
+\begin{code}%
+\>\AgdaFunction{checkInvArrow} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{x} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{))} \AgdaSymbol{(}\AgdaBound{t1} \AgdaBound{t2} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{))} \AgdaSymbol{\{}\AgdaBound{t'} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{→}\<%
+\\
+\>[2]\AgdaIndent{16}{}\<[16]%
+\>[16]\AgdaFunction{check} \AgdaBound{x} \AgdaSymbol{(}\AgdaBound{t1} \AgdaInductiveConstructor{⇒} \AgdaBound{t2}\AgdaSymbol{)} \AgdaDatatype{≡} \AgdaInductiveConstructor{just} \AgdaBound{t'} \AgdaSymbol{→} \<[46]%
+\>[46]\<%
+\\
+\>[2]\AgdaIndent{16}{}\<[16]%
+\>[16]\AgdaFunction{Σ[} \AgdaBound{t1'} \AgdaFunction{∈} \AgdaDatatype{Type} \AgdaBound{n} \AgdaFunction{]} \AgdaFunction{Σ[} \AgdaBound{t2'} \AgdaFunction{∈} \AgdaDatatype{Type} \AgdaBound{n} \AgdaFunction{]}\<%
+\\
+\>[2]\AgdaIndent{16}{}\<[16]%
+\>[16]\AgdaSymbol{(}\AgdaBound{t'} \AgdaDatatype{≡} \AgdaBound{t1'} \AgdaInductiveConstructor{⇒} \AgdaBound{t2'}\AgdaSymbol{)} \AgdaFunction{×} \AgdaSymbol{(}\AgdaFunction{check} \AgdaBound{x} \AgdaBound{t1} \AgdaDatatype{≡} \AgdaInductiveConstructor{just} \AgdaBound{t1'}\AgdaSymbol{)} \AgdaFunction{×} \AgdaSymbol{(}\AgdaFunction{check} \AgdaBound{x} \AgdaBound{t2} \AgdaDatatype{≡} \AgdaInductiveConstructor{just} \AgdaBound{t2'}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{checkInvArrow} \AgdaBound{x} \AgdaBound{t1} \AgdaBound{t2} \AgdaBound{eq} \AgdaKeyword{with} \AgdaFunction{check} \AgdaBound{x} \AgdaBound{t1} \AgdaSymbol{|} \AgdaFunction{check} \AgdaBound{x} \AgdaBound{t2}\<%
+\\
+\>\AgdaFunction{checkInvArrow} \AgdaBound{x} \AgdaBound{t1} \AgdaBound{t2} \AgdaInductiveConstructor{refl} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{t1'} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{t2'} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaBound{t1'} \AgdaInductiveConstructor{,} \AgdaBound{t2'} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{refl} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{refl} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{refl}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{checkInvArrow} \AgdaBound{x} \AgdaBound{t1} \AgdaBound{t2} \AgdaSymbol{()} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{t1'} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaFunction{checkInvArrow} \AgdaBound{x} \AgdaBound{t1} \AgdaBound{t2} \AgdaSymbol{()} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{t2'}\<%
+\\
+\>\AgdaFunction{checkInvArrow} \AgdaBound{x} \AgdaBound{t1} \AgdaBound{t2} \AgdaSymbol{()} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing}\<%
+\end{code}
+}
+\agdaSnippet\CheckInvVar{
+\begin{code}%
+\>\AgdaFunction{checkInvVar} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{x} \AgdaBound{y} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{))} \AgdaSymbol{\{}\AgdaBound{t'} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{→}\<%
+\\
+\>[2]\AgdaIndent{16}{}\<[16]%
+\>[16]\AgdaFunction{check} \AgdaBound{x} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{y}\AgdaSymbol{)} \AgdaDatatype{≡} \AgdaInductiveConstructor{just} \AgdaBound{t'} \AgdaSymbol{→} \<[45]%
+\>[45]\<%
+\\
+\>[2]\AgdaIndent{16}{}\<[16]%
+\>[16]\AgdaFunction{Σ[} \AgdaBound{y'} \AgdaFunction{∈} \AgdaDatatype{Fin} \AgdaBound{n} \AgdaFunction{]} \<[32]%
+\>[32]\<%
+\\
+\>[2]\AgdaIndent{16}{}\<[16]%
+\>[16]\AgdaSymbol{(}\AgdaBound{t'} \AgdaDatatype{≡} \AgdaInductiveConstructor{TVar} \AgdaBound{y'}\AgdaSymbol{)} \AgdaFunction{×} \AgdaSymbol{(}\AgdaFunction{thick} \AgdaBound{x} \AgdaBound{y} \AgdaDatatype{≡} \AgdaInductiveConstructor{just} \AgdaBound{y'}\AgdaSymbol{)} \<[55]%
+\>[55]\<%
+\\
+\>\AgdaFunction{checkInvVar} \AgdaBound{x} \AgdaBound{y} \AgdaBound{eq} \AgdaKeyword{with} \AgdaFunction{thick} \AgdaBound{x} \AgdaBound{y} \<[34]%
+\>[34]\<%
+\\
+\>\AgdaFunction{checkInvVar} \AgdaBound{x} \AgdaBound{y} \AgdaInductiveConstructor{refl} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{x₁} \AgdaSymbol{=} \AgdaBound{x₁} \AgdaInductiveConstructor{,} \AgdaSymbol{(}\AgdaInductiveConstructor{refl} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{refl}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{checkInvVar} \AgdaBound{x} \AgdaBound{y} \AgdaSymbol{()} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing}\<%
+\end{code}
+}
+\agdaSnippet\For{
+\begin{code}%
+\>\AgdaComment{-- t' for x : x 番の型変数を型 t' に unify するような unifier を返す。}\<%
+\\
+\>\AgdaFunction{\_for\_} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{t'} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{x} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{))} \AgdaSymbol{→} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n}\<%
+\\
+\>\AgdaFunction{\_for\_} \AgdaBound{t'} \AgdaBound{x} \AgdaBound{y} \AgdaKeyword{with} \AgdaFunction{thick} \AgdaBound{x} \AgdaBound{y}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{y'} \AgdaSymbol{=} \AgdaInductiveConstructor{TVar} \AgdaBound{y'}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaBound{t'}\<%
+\end{code}
+}
+\agdaSnippet\AListDef{
+\begin{code}%
+\>\AgdaComment{-- AList m n : m 個の型変数を持つ型を n 個の型変数を持つ型にする代入}\<%
+\\
+\>\AgdaKeyword{data} \AgdaDatatype{AList} \AgdaSymbol{:} \AgdaDatatype{ℕ} \AgdaSymbol{→} \AgdaDatatype{ℕ} \AgdaSymbol{→} \AgdaPrimitiveType{Set} \AgdaKeyword{where}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaInductiveConstructor{anil} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{m} \AgdaComment{-- 何もしない代入}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaInductiveConstructor{\_asnoc\_/\_} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{\{}\AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{σ} \AgdaSymbol{:} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{t'} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→}\<%
+\\
+\>[2]\AgdaIndent{14}{}\<[14]%
+\>[14]\AgdaSymbol{(}\AgdaBound{x} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{))} \AgdaSymbol{→} \AgdaDatatype{AList} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{)} \AgdaBound{n} \AgdaComment{-- x を t' にした上で、さらにσを行う代入}\<%
+\end{code}
+}
+\agdaIgnore{
+\begin{code}%
+\>\AgdaComment{-- liftAList1 lst : lst の中の型変数の数を 1 だけ増やす}\<%
+\\
+\>\AgdaFunction{liftAList1} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaBound{m'} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{m'} \AgdaSymbol{→} \AgdaDatatype{AList} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m'}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{liftAList1} \AgdaInductiveConstructor{anil} \AgdaSymbol{=} \AgdaInductiveConstructor{anil}\<%
+\\
+\>\AgdaFunction{liftAList1} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{t} \AgdaInductiveConstructor{/} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaFunction{liftAList1} \AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaFunction{liftType} \AgdaNumber{1} \AgdaBound{t} \AgdaInductiveConstructor{/} \AgdaFunction{inject₁} \AgdaBound{x}\<%
+\\
+%
+\\
+\>\AgdaComment{-- liftAList n lst : lst の中の型変数の数を n だけ増やす}\<%
+\\
+\>\AgdaFunction{liftAList} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaBound{m'} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{m'} \AgdaSymbol{→} \AgdaDatatype{AList} \AgdaSymbol{(}\AgdaBound{n} \AgdaPrimitive{+} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{n} \AgdaPrimitive{+} \AgdaBound{m'}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{liftAList} \AgdaInductiveConstructor{zero} \AgdaBound{σ} \AgdaSymbol{=} \AgdaBound{σ}\<%
+\\
+\>\AgdaFunction{liftAList} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{n}\AgdaSymbol{)} \AgdaBound{σ} \AgdaSymbol{=} \AgdaFunction{liftAList1} \AgdaSymbol{(}\AgdaFunction{liftAList} \AgdaBound{n} \AgdaBound{σ}\AgdaSymbol{)}\<%
+\\
+%
+\\
+\>\AgdaComment{-- 型変数に代入σを施す}\<%
+\\
+\>\AgdaFunction{sub} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{σ} \AgdaSymbol{:} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{Fin} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n}\<%
+\\
+\>\AgdaFunction{sub} \AgdaInductiveConstructor{anil} \AgdaSymbol{=} \AgdaInductiveConstructor{TVar}\<%
+\\
+\>\AgdaFunction{sub} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{t'} \AgdaInductiveConstructor{/} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaFunction{sub} \AgdaBound{σ}\AgdaSymbol{)} \AgdaFunction{◇} \AgdaSymbol{(}\AgdaBound{t'} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaKeyword{where} \AgdaFunction{\_◇\_} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaBound{n} \AgdaBound{l} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{f} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{g} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaBound{l} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaDatatype{Fin} \AgdaBound{l} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{n}\AgdaSymbol{)}\<%
+\\
+\>[2]\AgdaIndent{8}{}\<[8]%
+\>[8]\AgdaBound{f} \AgdaFunction{◇} \AgdaBound{g} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaBound{f} \AgdaFunction{◃}\AgdaSymbol{)} \AgdaFunction{∘} \AgdaBound{g}\<%
+\\
+%
+\\
+\>\AgdaComment{-- ふたつの代入をくっつける}\<%
+\\
+\>\AgdaFunction{\_+!+\_} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{l} \AgdaBound{m} \AgdaBound{n} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{ρ} \AgdaSymbol{:} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{σ} \AgdaSymbol{:} \AgdaDatatype{AList} \AgdaBound{l} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \<[59]%
+\>[59]\AgdaDatatype{AList} \AgdaBound{l} \AgdaBound{n}\<%
+\\
+\>\AgdaBound{ρ} \AgdaFunction{+!+} \AgdaInductiveConstructor{anil} \AgdaSymbol{=} \AgdaBound{ρ}\<%
+\\
+\>\AgdaBound{ρ} \AgdaFunction{+!+} \AgdaSymbol{(}\AgdaBound{alist} \AgdaInductiveConstructor{asnoc} \AgdaBound{t} \AgdaInductiveConstructor{/} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaBound{ρ} \AgdaFunction{+!+} \AgdaBound{alist}\AgdaSymbol{)} \AgdaInductiveConstructor{asnoc} \AgdaBound{t} \AgdaInductiveConstructor{/} \AgdaBound{x}\<%
+\end{code}
+}
+\agdaSnippet\SubstType{
+\begin{code}%
+\>\AgdaComment{-- substType σ t : t に σ を適用した型を返す}\<%
+\\
+\>\AgdaFunction{substType} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaBound{m'} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{m'} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{m} \AgdaSymbol{→} \AgdaDatatype{Type} \AgdaBound{m'} \<[55]%
+\>[55]\<%
+\\
+\>\AgdaFunction{substType} \AgdaBound{σ} \AgdaBound{t} \AgdaSymbol{=} \AgdaFunction{sub} \AgdaBound{σ} \AgdaFunction{◃} \AgdaBound{t}\<%
+\end{code}
+}
+\agdaSnippet\FlexFlex{
+\begin{code}%
+\>\AgdaComment{-- 型変数 x と y を unify する代入を返す }\<%
+\\
+\>\AgdaFunction{flexFlex} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{x} \AgdaBound{y} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\<%
+\\
+\>\AgdaFunction{flexFlex} \AgdaSymbol{\{}\AgdaInductiveConstructor{zero}\AgdaSymbol{\}} \AgdaSymbol{()} \AgdaBound{y}\<%
+\\
+\>\AgdaFunction{flexFlex} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{x} \AgdaBound{y} \AgdaKeyword{with} \AgdaFunction{thick} \AgdaBound{x} \AgdaBound{y} \<[36]%
+\>[36]\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)} \AgdaComment{-- x = y だった。代入の必要なし}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{y'} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaBound{m} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil} \AgdaInductiveConstructor{asnoc} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{y'}\AgdaSymbol{)} \AgdaInductiveConstructor{/} \AgdaBound{x}\AgdaSymbol{)} \AgdaComment{-- TVar y' for x を返す}\<%
+\end{code}
+}
+\agdaSnippet\FlexRigid{
+\begin{code}%
+\>\AgdaComment{-- 型変数 x と型 t を unify する代入を返す}\<%
+\\
+\>\AgdaComment{-- x が t に現れていたら nothing を返す}\<%
+\\
+\>\AgdaFunction{flexRigid} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{x} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{Maybe} \AgdaSymbol{(}\AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{flexRigid} \AgdaSymbol{\{}\AgdaInductiveConstructor{zero}\AgdaSymbol{\}} \AgdaSymbol{()} \AgdaBound{t}\<%
+\\
+\>\AgdaFunction{flexRigid} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{x} \AgdaBound{t} \AgdaKeyword{with} \AgdaFunction{check} \AgdaBound{x} \AgdaBound{t}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing} \AgdaComment{-- x が t に現れていた}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{t'} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{m} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil} \AgdaInductiveConstructor{asnoc} \AgdaBound{t'} \AgdaInductiveConstructor{/} \AgdaBound{x}\AgdaSymbol{)} \AgdaComment{-- t' for x を返す}\<%
+\end{code}
+}
+\agdaSnippet\Amgu{
+\begin{code}%
+\>\<%
+\\
+\>\AgdaComment{-- 型 s と t（に acc をかけたもの）を unify する代入を返す}\<%
+\\
+\>\AgdaFunction{amgu} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{s} \AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{acc} \AgdaSymbol{:} \AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{Maybe} \AgdaSymbol{(}\AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{amgu} \AgdaInductiveConstructor{TInt} \<[14]%
+\>[14]\AgdaInductiveConstructor{TInt} \<[23]%
+\>[23]\AgdaBound{acc} \<[34]%
+\>[34]\AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaBound{acc}\<%
+\\
+\>\AgdaFunction{amgu} \AgdaInductiveConstructor{TInt} \<[14]%
+\>[14]\AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \AgdaBound{acc} \<[34]%
+\>[34]\AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaFunction{amgu} \AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{⇒} \AgdaBound{s₁}\AgdaSymbol{)} \AgdaInductiveConstructor{TInt} \<[23]%
+\>[23]\AgdaBound{acc} \<[34]%
+\>[34]\AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaFunction{amgu} \AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{⇒} \AgdaBound{s₁}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \AgdaBound{acc} \<[34]%
+\>[34]\AgdaKeyword{with} \AgdaFunction{amgu} \AgdaBound{s} \AgdaBound{t} \AgdaBound{acc}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{acc'} \AgdaSymbol{=} \AgdaFunction{amgu} \AgdaBound{s₁} \AgdaBound{t₁} \AgdaBound{acc'}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaFunction{amgu} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{y}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaFunction{flexFlex} \AgdaBound{x} \AgdaBound{y}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{amgu} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaBound{t} \<[23]%
+\>[23]\AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaFunction{flexRigid} \AgdaBound{x} \AgdaBound{t}\<%
+\\
+\>\AgdaFunction{amgu} \AgdaBound{t} \<[14]%
+\>[14]\AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaFunction{flexRigid} \AgdaBound{x} \AgdaBound{t}\<%
+\\
+\>\AgdaFunction{amgu} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{s} \AgdaBound{t} \AgdaSymbol{(}\AgdaBound{n} \AgdaInductiveConstructor{,} \AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaKeyword{with} \AgdaFunction{amgu} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{s}\AgdaSymbol{)} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{n} \AgdaInductiveConstructor{,} \AgdaBound{σ}\AgdaSymbol{)}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{n'} \AgdaInductiveConstructor{,} \AgdaBound{σ'}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{n'} \AgdaInductiveConstructor{,} \AgdaBound{σ'} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\end{code}
+}
+\agdaSnippet\Mgu{
+\begin{code}%
+\>\AgdaComment{-- 型 s と t を unify する代入を返す}\<%
+\\
+\>\AgdaFunction{mgu} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{s} \AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaDatatype{Maybe} \AgdaSymbol{(}\AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{mgu} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{s} \AgdaBound{t} \AgdaSymbol{=} \AgdaFunction{amgu} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{s} \AgdaBound{t} \AgdaSymbol{(}\AgdaBound{m} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)}\<%
+\end{code}
+}
+\agdaSnippet\TestCodesTwo{
+\begin{code}%
+\>\AgdaComment{-- test}\<%
+\\
+%
+\\
+\>\AgdaFunction{t1} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaNumber{4}\<%
+\\
+\>\AgdaFunction{t1} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaInductiveConstructor{zero}\AgdaSymbol{)} \AgdaInductiveConstructor{⇒} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaInductiveConstructor{zero}\AgdaSymbol{)}\<%
+\\
+%
+\\
+\>\AgdaFunction{t2} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaNumber{4}\<%
+\\
+\>\AgdaFunction{t2} \AgdaSymbol{=} \AgdaSymbol{((}\AgdaInductiveConstructor{TVar} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaInductiveConstructor{zero}\AgdaSymbol{))} \AgdaInductiveConstructor{⇒} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaInductiveConstructor{zero}\AgdaSymbol{))))} \AgdaInductiveConstructor{⇒} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaInductiveConstructor{zero}\AgdaSymbol{))))}\<%
+\\
+%
+\\
+\>\AgdaFunction{u12} \AgdaSymbol{:} \AgdaDatatype{Maybe} \AgdaSymbol{(}\AgdaFunction{∃} \AgdaSymbol{(}\AgdaDatatype{AList} \AgdaNumber{4}\AgdaSymbol{))}\<%
+\\
+\>\AgdaFunction{u12} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaFunction{mgu} \AgdaFunction{t1} \AgdaFunction{t2}\AgdaSymbol{)}\<%
+\\
+%
+\\
+\>\AgdaFunction{t3} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaNumber{4}\<%
+\\
+\>\AgdaFunction{t3} \AgdaSymbol{=} \AgdaSymbol{((}\AgdaInductiveConstructor{TVar} \AgdaInductiveConstructor{zero}\AgdaSymbol{)} \AgdaInductiveConstructor{⇒} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaInductiveConstructor{zero}\AgdaSymbol{))))} \AgdaInductiveConstructor{⇒} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaInductiveConstructor{zero}\AgdaSymbol{))))}\<%
+\\
+%
+\\
+\>\AgdaFunction{u13} \AgdaSymbol{:} \AgdaDatatype{Maybe} \AgdaSymbol{(}\AgdaFunction{∃} \AgdaSymbol{(}\AgdaDatatype{AList} \AgdaNumber{4}\AgdaSymbol{))}\<%
+\\
+\>\AgdaFunction{u13} \AgdaSymbol{=} \AgdaSymbol{(}\AgdaFunction{mgu} \AgdaFunction{t1} \AgdaFunction{t3}\AgdaSymbol{)}\<%
+\end{code}
+}
+
+\agdaSnippet\Extends{
+\begin{code}%
+\>\AgdaComment{--「σ' は σ の拡張になっている」という命題}\<%
+\\
+\>\AgdaFunction{\_extends\_} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{σ'} \AgdaSymbol{:} \AgdaFunction{Σ[} \AgdaBound{n'} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n'}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{σ} \AgdaSymbol{:} \AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaPrimitiveType{Set}\<%
+\\
+\>\AgdaFunction{\_extends\_} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{n'} \AgdaInductiveConstructor{,} \AgdaBound{σ'}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{n} \AgdaInductiveConstructor{,} \AgdaBound{σ}\AgdaSymbol{)} \AgdaSymbol{=}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaSymbol{∀} \AgdaSymbol{(}\AgdaBound{s} \AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaFunction{substType} \AgdaBound{σ} \AgdaBound{s} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaBound{σ} \AgdaBound{t} \AgdaSymbol{→} \AgdaFunction{substType} \AgdaBound{σ'} \AgdaBound{s} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaBound{σ'} \AgdaBound{t}\<%
+\end{code}
+}
+\agdaSnippet\SigmaExtends{
+\begin{code}%
+\>\AgdaComment{-- 自分自身は自分自身の拡張になっている}\<%
+\\
+\>\AgdaFunction{σextendsσ} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{σ} \AgdaSymbol{:} \AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaBound{σ} \AgdaFunction{extends} \AgdaBound{σ}\<%
+\\
+\>\AgdaFunction{σextendsσ} \AgdaBound{σ} \AgdaBound{s} \AgdaBound{t} \AgdaBound{eq} \AgdaSymbol{=} \AgdaBound{eq}\<%
+\end{code}
+}
+\agdaSnippet\SigmaExtendsNil{
+\begin{code}%
+\>\AgdaComment{-- 任意のσは anil の拡張になっている}\<%
+\\
+\>\AgdaFunction{σextendsNil} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{σ} \AgdaSymbol{:} \AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaBound{σ} \AgdaFunction{extends} \AgdaSymbol{(}\AgdaBound{m} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{σextendsNil} \AgdaBound{σ} \AgdaBound{s} \AgdaBound{t} \AgdaBound{eq} \AgdaKeyword{rewrite} \AgdaFunction{TVarId} \AgdaBound{s} \AgdaSymbol{|} \AgdaFunction{TVarId} \AgdaBound{t} \AgdaSymbol{=} \AgdaFunction{cong} \AgdaSymbol{(}\AgdaFunction{substType} \AgdaSymbol{(}\AgdaField{proj₂} \AgdaBound{σ}\AgdaSymbol{))} \AgdaBound{eq}\<%
+\end{code}
+}
+\agdaSnippet\FlexFlexTwo{
+\begin{code}%
+\>\AgdaComment{-- 型変数 x と y を unify する代入を返す }\<%
+\\
+\>\AgdaFunction{flexFlex2} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{x} \AgdaBound{y} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(} \AgdaFunction{Σ[} \AgdaBound{σ} \AgdaFunction{∈} \AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n} \AgdaFunction{]}\<%
+\\
+\>[2]\AgdaIndent{12}{}\<[12]%
+\>[12]\AgdaFunction{substType} \AgdaSymbol{(}\AgdaField{proj₂} \AgdaBound{σ}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaSymbol{(}\AgdaField{proj₂} \AgdaBound{σ}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{y}\AgdaSymbol{))}\<%
+\\
+\>\AgdaFunction{flexFlex2} \AgdaSymbol{\{}\AgdaInductiveConstructor{zero}\AgdaSymbol{\}} \AgdaSymbol{()} \AgdaBound{y}\<%
+\\
+\>\AgdaFunction{flexFlex2} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{x} \AgdaBound{y} \AgdaKeyword{with} \AgdaFunction{thick} \AgdaBound{x} \AgdaBound{y} \AgdaSymbol{|} \AgdaFunction{inspect} \AgdaSymbol{(}\AgdaFunction{thick} \AgdaBound{x}\AgdaSymbol{)} \AgdaBound{y}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{thickxy≡nothing} \AgdaInductiveConstructor{]} \AgdaSymbol{=}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaSymbol{((}\AgdaInductiveConstructor{suc} \AgdaBound{m} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)} \AgdaInductiveConstructor{,} \AgdaFunction{cong} \AgdaInductiveConstructor{TVar} \AgdaSymbol{(}\AgdaFunction{thickxy-x≡y} \AgdaBound{x} \AgdaBound{y} \AgdaBound{thickxy≡nothing}\AgdaSymbol{))} \<[66]%
+\>[66]\AgdaComment{-- x = y だった。代入の必要なし}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{y'} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{thickxy≡justy'} \AgdaInductiveConstructor{]} \AgdaSymbol{=}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaSymbol{((}\AgdaBound{m} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil} \AgdaInductiveConstructor{asnoc} \AgdaInductiveConstructor{TVar} \AgdaBound{y'} \AgdaInductiveConstructor{/} \AgdaBound{x}\AgdaSymbol{)} \AgdaInductiveConstructor{,} \AgdaFunction{cong} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaFunction{◃}\AgdaSymbol{)} \AgdaFunction{eq}\AgdaSymbol{)} \<[53]%
+\>[53]\AgdaComment{-- TVar y' for x を返す}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaKeyword{where} \AgdaFunction{eq} \AgdaSymbol{:} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{y'} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaDatatype{≡} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{y'} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{y}\AgdaSymbol{)}\<%
+\\
+\>[2]\AgdaIndent{8}{}\<[8]%
+\>[8]\AgdaFunction{eq} \AgdaKeyword{rewrite} \AgdaFunction{thickxx≡nothing} \AgdaBound{x} \AgdaSymbol{|} \AgdaBound{thickxy≡justy'} \AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\\
+\>[2]\AgdaIndent{8}{}\<[8]%
+\>[8]\<%
+\end{code}
+}
+\agdaSnippet\ForTVarLem{
+\begin{code}%
+\>\AgdaFunction{forTVarLem} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{x} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{))} \AgdaSymbol{→} \AgdaSymbol{∀(}\AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \<[55]%
+\>[55]\AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaBound{t} \AgdaDatatype{≡} \AgdaSymbol{(}\AgdaBound{t} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{forTVarLem} \AgdaBound{x} \AgdaBound{t} \AgdaKeyword{rewrite} \AgdaFunction{thickxx≡nothing} \AgdaBound{x} \<[42]%
+\>[42]\AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\end{code}
+}
+\agdaSnippet\FlexRigidLem{
+\begin{code}%
+\>\AgdaFunction{flexRigidLem} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{\{}\AgdaBound{t'} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{∀\{}\AgdaBound{t''} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{x} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{))} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{))}\<%
+\\
+\>[8]\AgdaIndent{15}{}\<[15]%
+\>[15]\AgdaSymbol{→} \AgdaFunction{check} \AgdaBound{x} \AgdaBound{t} \AgdaDatatype{≡} \AgdaInductiveConstructor{just} \AgdaBound{t'} \AgdaSymbol{→} \<[40]%
+\>[40]\AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaSymbol{((}\AgdaBound{t'} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{))} \AgdaDatatype{≡} \AgdaSymbol{(λ} \AgdaBound{y} \AgdaSymbol{→} \AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaBound{t''} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaBound{y}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x₁}\AgdaSymbol{)} \AgdaBound{p} \AgdaKeyword{with} \AgdaFunction{check} \AgdaBound{x} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x₁}\AgdaSymbol{)} \AgdaSymbol{|} \AgdaFunction{inspect} \AgdaSymbol{(}\AgdaFunction{check} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x₁}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x₁}\AgdaSymbol{)} \AgdaInductiveConstructor{refl} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{x₂} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq} \AgdaInductiveConstructor{]} \AgdaKeyword{with} \AgdaFunction{checkInvVar} \AgdaBound{x} \AgdaBound{x₁} \AgdaBound{eq}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x₁}\AgdaSymbol{)} \AgdaInductiveConstructor{refl}\<%
+\\
+\>[0]\AgdaIndent{13}{}\<[13]%
+\>[13]\AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{.(}\AgdaInductiveConstructor{TVar} \AgdaBound{x₂}\AgdaSymbol{)} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq} \AgdaInductiveConstructor{]} \AgdaSymbol{|} \AgdaBound{x₂} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{refl} \AgdaInductiveConstructor{,} \AgdaBound{proj₃} \AgdaKeyword{rewrite} \AgdaBound{proj₃} \AgdaSymbol{|} \<[77]%
+\>[77]\AgdaFunction{thickxx≡nothing} \AgdaBound{x} \AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x₁}\AgdaSymbol{)} \AgdaSymbol{()} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq} \AgdaInductiveConstructor{]}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaInductiveConstructor{TInt} \AgdaBound{p} \AgdaKeyword{with} \AgdaFunction{check} \AgdaBound{x} \AgdaInductiveConstructor{TInt} \AgdaSymbol{|} \AgdaFunction{inspect} \AgdaSymbol{(}\AgdaFunction{check} \AgdaBound{x}\AgdaSymbol{)} \AgdaInductiveConstructor{TInt}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaInductiveConstructor{TInt} \AgdaBound{p} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x₁}\AgdaSymbol{)} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaSymbol{()} \AgdaInductiveConstructor{]}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaInductiveConstructor{TInt} \AgdaInductiveConstructor{refl} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaInductiveConstructor{TInt} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaInductiveConstructor{refl} \AgdaInductiveConstructor{]} \AgdaKeyword{rewrite} \AgdaFunction{thickxx≡nothing} \AgdaBound{x} \AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaInductiveConstructor{TInt} \AgdaBound{p} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{x₁} \AgdaInductiveConstructor{⇒} \AgdaBound{x₂}\AgdaSymbol{)} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaSymbol{()} \AgdaInductiveConstructor{]}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaInductiveConstructor{TInt} \AgdaSymbol{()} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq} \AgdaInductiveConstructor{]} \<[42]%
+\>[42]\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \AgdaBound{p} \AgdaKeyword{with} \AgdaFunction{check} \AgdaBound{x} \AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \<[49]%
+\>[49]\AgdaSymbol{|} \AgdaFunction{inspect} \AgdaSymbol{(}\AgdaFunction{check} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \AgdaInductiveConstructor{refl} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x₁}\AgdaSymbol{)} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq} \AgdaInductiveConstructor{]} \AgdaKeyword{with} \AgdaFunction{checkInvArrow} \AgdaBound{x} \AgdaBound{t} \AgdaBound{t₁} \AgdaBound{eq}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaSymbol{(}\AgdaBound{t1'} \AgdaInductiveConstructor{,} \AgdaBound{t2'} \AgdaInductiveConstructor{,} \AgdaSymbol{()} \AgdaInductiveConstructor{,} \AgdaBound{b} \AgdaInductiveConstructor{,} \AgdaBound{c}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \AgdaBound{p} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaInductiveConstructor{TInt} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq} \AgdaInductiveConstructor{]} \AgdaKeyword{with} \AgdaFunction{checkInvArrow} \AgdaBound{x} \AgdaBound{t} \AgdaBound{t₁} \AgdaBound{eq}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaSymbol{(}\AgdaBound{t1'} \AgdaInductiveConstructor{,} \AgdaBound{t2'} \AgdaInductiveConstructor{,} \AgdaSymbol{()} \AgdaInductiveConstructor{,} \AgdaBound{b} \AgdaInductiveConstructor{,} \AgdaBound{c}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \AgdaInductiveConstructor{refl} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{x₁} \AgdaInductiveConstructor{⇒} \AgdaBound{x₂}\AgdaSymbol{)} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq} \AgdaInductiveConstructor{]} \AgdaKeyword{with} \AgdaFunction{checkInvArrow} \AgdaBound{x} \AgdaBound{t} \AgdaBound{t₁} \AgdaBound{eq}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaSymbol{\{}\AgdaArgument{t''} \AgdaSymbol{=} \AgdaBound{t''}\AgdaSymbol{\}} \AgdaBound{x} \AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \AgdaInductiveConstructor{refl} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{x₁} \AgdaInductiveConstructor{⇒} \AgdaBound{x₂}\AgdaSymbol{)}\<%
+\\
+\>[0]\AgdaIndent{13}{}\<[13]%
+\>[13]\AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq} \AgdaInductiveConstructor{]} \AgdaSymbol{|} \AgdaSymbol{.}\AgdaBound{x₁} \AgdaInductiveConstructor{,} \AgdaSymbol{.}\AgdaBound{x₂} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{refl} \AgdaInductiveConstructor{,} \AgdaBound{b} \AgdaInductiveConstructor{,} \AgdaBound{c} \AgdaKeyword{rewrite} \AgdaFunction{thickxx≡nothing} \AgdaBound{x} \AgdaSymbol{=} \AgdaFunction{cong₂} \AgdaInductiveConstructor{\_⇒\_} \AgdaFunction{p} \AgdaFunction{q} \<[91]%
+\>[91]\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaKeyword{where} \AgdaFunction{p} \AgdaSymbol{:} \AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaBound{x₁} \AgdaDatatype{≡} \AgdaSymbol{(λ} \AgdaBound{y} \AgdaSymbol{→} \AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaBound{t''} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaBound{y}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t}\<%
+\\
+\>[2]\AgdaIndent{8}{}\<[8]%
+\>[8]\AgdaFunction{p} \AgdaSymbol{=} \AgdaFunction{begin}\<%
+\\
+\>[8]\AgdaIndent{14}{}\<[14]%
+\>[14]\AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaBound{x₁}\<%
+\\
+\>[0]\AgdaIndent{12}{}\<[12]%
+\>[12]\AgdaFunction{≡⟨} \<[16]%
+\>[16]\AgdaFunction{cong} \AgdaSymbol{(λ} \AgdaBound{x₃} \AgdaSymbol{→} \AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaBound{x₃}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaFunction{forTVarLem} \AgdaBound{x} \AgdaBound{x₁}\AgdaSymbol{)} \AgdaFunction{⟩}\<%
+\\
+\>[12]\AgdaIndent{14}{}\<[14]%
+\>[14]\AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaSymbol{((}\AgdaBound{x₁} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{))}\<%
+\\
+\>[0]\AgdaIndent{12}{}\<[12]%
+\>[12]\AgdaFunction{≡⟨} \AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaBound{t} \AgdaBound{b} \AgdaFunction{⟩}\<%
+\\
+\>[12]\AgdaIndent{14}{}\<[14]%
+\>[14]\AgdaSymbol{(λ} \AgdaBound{y} \AgdaSymbol{→} \AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaBound{t''} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaBound{y}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t}\<%
+\\
+\>[0]\AgdaIndent{12}{}\<[12]%
+\>[12]\AgdaFunction{∎}\<%
+\\
+\>[0]\AgdaIndent{8}{}\<[8]%
+\>[8]\AgdaFunction{q} \AgdaSymbol{:} \AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaBound{x₂} \AgdaDatatype{≡} \AgdaSymbol{(λ} \AgdaBound{y} \AgdaSymbol{→} \AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaBound{t''} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaBound{y}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t₁}\<%
+\\
+\>[0]\AgdaIndent{8}{}\<[8]%
+\>[8]\AgdaFunction{q} \AgdaSymbol{=} \AgdaFunction{begin}\<%
+\\
+\>[8]\AgdaIndent{14}{}\<[14]%
+\>[14]\AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaBound{x₂}\<%
+\\
+\>[0]\AgdaIndent{12}{}\<[12]%
+\>[12]\AgdaFunction{≡⟨} \<[16]%
+\>[16]\AgdaFunction{cong} \AgdaSymbol{(λ} \AgdaBound{x₃} \AgdaSymbol{→} \AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaBound{x₃}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaFunction{forTVarLem} \AgdaBound{x} \AgdaBound{x₂}\AgdaSymbol{)} \AgdaFunction{⟩}\<%
+\\
+\>[12]\AgdaIndent{14}{}\<[14]%
+\>[14]\AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaSymbol{((}\AgdaBound{x₂} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{))}\<%
+\\
+\>[0]\AgdaIndent{12}{}\<[12]%
+\>[12]\AgdaFunction{≡⟨} \AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaBound{t₁} \AgdaBound{c} \AgdaFunction{⟩}\<%
+\\
+\>[12]\AgdaIndent{14}{}\<[14]%
+\>[14]\AgdaSymbol{(λ} \AgdaBound{y} \AgdaSymbol{→} \AgdaInductiveConstructor{TVar} \AgdaFunction{◃} \AgdaSymbol{(}\AgdaBound{t''} \AgdaFunction{for} \AgdaBound{x}\AgdaSymbol{)} \AgdaBound{y}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t₁}\<%
+\\
+\>[0]\AgdaIndent{12}{}\<[12]%
+\>[12]\AgdaFunction{∎}\<%
+\\
+\>\AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \AgdaSymbol{()} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{eq} \AgdaInductiveConstructor{]}\<%
+\end{code}
+}
+
+\agdaSnippet\FlexRigidTwo{
+\begin{code}%
+\>\AgdaComment{-- 型変数 x と型 t を unify する代入を返す}\<%
+\\
+\>\AgdaComment{-- x が t に現れていたら nothing を返す}\<%
+\\
+\>\AgdaFunction{flexRigid2} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{x} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→}\<%
+\\
+\>[12]\AgdaIndent{13}{}\<[13]%
+\>[13]\AgdaDatatype{Maybe} \AgdaSymbol{(}\AgdaFunction{Σ[} \AgdaBound{σ} \AgdaFunction{∈} \AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n} \AgdaFunction{]} \AgdaFunction{substType} \AgdaSymbol{(}\AgdaField{proj₂} \AgdaBound{σ}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaSymbol{(}\AgdaField{proj₂} \AgdaBound{σ}\AgdaSymbol{)} \AgdaBound{t}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{flexRigid2} \AgdaSymbol{\{}\AgdaInductiveConstructor{zero}\AgdaSymbol{\}} \AgdaSymbol{()} \AgdaBound{t}\<%
+\\
+\>\AgdaFunction{flexRigid2} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{x} \AgdaBound{t} \AgdaKeyword{with} \AgdaFunction{check} \AgdaBound{x} \AgdaBound{t} \AgdaSymbol{|} \AgdaFunction{inspect} \AgdaSymbol{(}\AgdaFunction{check} \AgdaBound{x}\AgdaSymbol{)} \AgdaBound{t}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{checkxt≡nothing} \AgdaInductiveConstructor{]} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing} \AgdaComment{-- x が t に現れていた}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaBound{t'} \AgdaSymbol{|} \AgdaInductiveConstructor{[} \AgdaBound{checkxt≡justt'} \AgdaInductiveConstructor{]} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{((}\AgdaBound{m} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil} \AgdaInductiveConstructor{asnoc} \AgdaBound{t'} \AgdaInductiveConstructor{/} \AgdaBound{x}\AgdaSymbol{)} \AgdaInductiveConstructor{,} \AgdaFunction{flexRigidLem} \AgdaBound{x} \AgdaBound{t} \AgdaBound{checkxt≡justt'}\AgdaSymbol{)} \AgdaComment{-- t' for x を返す}\<%
+\end{code}
+}
+\agdaSnippet\substTypeForCommute{
+\begin{code}%
+\>\AgdaFunction{substTypeForCommute} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{m} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{σ} \AgdaSymbol{:} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{r} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{z} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{))} \AgdaSymbol{(}\AgdaBound{s} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{))} \AgdaSymbol{→}\<%
+\\
+\>[13]\AgdaIndent{22}{}\<[22]%
+\>[22]\AgdaFunction{substType} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaBound{s} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaBound{σ} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{s}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{substTypeForCommute} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\\
+\>\AgdaFunction{substTypeForCommute} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaInductiveConstructor{TInt} \AgdaSymbol{=} \AgdaInductiveConstructor{refl}\<%
+\\
+\>\AgdaFunction{substTypeForCommute} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaSymbol{(}\AgdaBound{s1} \AgdaInductiveConstructor{⇒} \AgdaBound{s2}\AgdaSymbol{)} \AgdaSymbol{=}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{cong₂} \AgdaInductiveConstructor{\_⇒\_} \AgdaSymbol{(}\AgdaFunction{substTypeForCommute} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaBound{s1}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaFunction{substTypeForCommute} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaBound{s2}\AgdaSymbol{)}\<%
+\end{code}
+}
+\agdaSnippet\substTypeForEq{
+\begin{code}%
+\>\AgdaFunction{substTypeForEq1} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{m} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{σ} \AgdaSymbol{:} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{r} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{z} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{))} \AgdaSymbol{(}\AgdaBound{s} \AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{))} \AgdaSymbol{→}\<%
+\\
+\>[2]\AgdaIndent{18}{}\<[18]%
+\>[18]\AgdaFunction{substType} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaBound{s} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaBound{t} \AgdaSymbol{→}\<%
+\\
+\>[2]\AgdaIndent{18}{}\<[18]%
+\>[18]\AgdaFunction{substType} \AgdaBound{σ} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{s}\AgdaSymbol{)} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaBound{σ} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{substTypeForEq1} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaBound{s} \AgdaBound{t} \AgdaBound{eq} \AgdaSymbol{=} \<[31]%
+\>[31]\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{begin}\<%
+\\
+\>[2]\AgdaIndent{4}{}\<[4]%
+\>[4]\AgdaFunction{substType} \AgdaBound{σ} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{s}\AgdaSymbol{)}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{≡⟨} \AgdaFunction{sym} \AgdaSymbol{(}\AgdaFunction{substTypeForCommute} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaBound{s}\AgdaSymbol{)} \<[40]%
+\>[40]\AgdaFunction{⟩}\<%
+\\
+\>[2]\AgdaIndent{4}{}\<[4]%
+\>[4]\AgdaFunction{substType} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaBound{s}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{≡⟨} \AgdaBound{eq} \AgdaFunction{⟩}\<%
+\\
+\>[2]\AgdaIndent{4}{}\<[4]%
+\>[4]\AgdaFunction{substType} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaBound{t}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{≡⟨} \AgdaFunction{substTypeForCommute} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaBound{t} \AgdaFunction{⟩}\<%
+\\
+\>[2]\AgdaIndent{4}{}\<[4]%
+\>[4]\AgdaFunction{substType} \AgdaBound{σ} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t}\AgdaSymbol{)}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{∎}\<%
+\\
+%
+\\
+\>\AgdaFunction{substTypeForEq2} \AgdaSymbol{:} \AgdaSymbol{∀} \AgdaSymbol{\{}\AgdaBound{m} \AgdaBound{n}\AgdaSymbol{\}} \AgdaSymbol{(}\AgdaBound{σ} \AgdaSymbol{:} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{r} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{z} \AgdaSymbol{:} \AgdaDatatype{Fin} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{))} \AgdaSymbol{(}\AgdaBound{s} \AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{))} \AgdaSymbol{→}\<%
+\\
+\>[2]\AgdaIndent{18}{}\<[18]%
+\>[18]\AgdaFunction{substType} \AgdaBound{σ} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{s}\AgdaSymbol{)} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaBound{σ} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t}\AgdaSymbol{)} \AgdaSymbol{→}\<%
+\\
+\>[2]\AgdaIndent{18}{}\<[18]%
+\>[18]\AgdaFunction{substType} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaBound{s} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaBound{t}\<%
+\\
+\>\AgdaFunction{substTypeForEq2} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaBound{s} \AgdaBound{t} \AgdaBound{eq} \AgdaSymbol{=} \<[31]%
+\>[31]\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{begin}\<%
+\\
+\>[2]\AgdaIndent{4}{}\<[4]%
+\>[4]\AgdaFunction{substType} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaBound{s}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{≡⟨} \AgdaFunction{substTypeForCommute} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaBound{s} \AgdaFunction{⟩}\<%
+\\
+\>[2]\AgdaIndent{4}{}\<[4]%
+\>[4]\AgdaFunction{substType} \AgdaBound{σ} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{s}\AgdaSymbol{)}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{≡⟨} \AgdaBound{eq} \AgdaFunction{⟩}\<%
+\\
+\>[2]\AgdaIndent{4}{}\<[4]%
+\>[4]\AgdaFunction{substType} \AgdaBound{σ} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t}\AgdaSymbol{)}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{≡⟨} \AgdaFunction{sym} \AgdaSymbol{(}\AgdaFunction{substTypeForCommute} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaBound{t}\AgdaSymbol{)} \<[40]%
+\>[40]\AgdaFunction{⟩}\<%
+\\
+\>[2]\AgdaIndent{4}{}\<[4]%
+\>[4]\AgdaFunction{substType} \AgdaSymbol{(}\AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaBound{t}\<%
+\\
+\>[0]\AgdaIndent{2}{}\<[2]%
+\>[2]\AgdaFunction{∎}\<%
+\end{code}
+}
+\agdaSnippet\AmguTwo{
+\begin{code}%
+\>\AgdaComment{-- 型 s と t（に acc をかけたもの）を unify する代入を返す}\<%
+\\
+\>\AgdaFunction{amgu2} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{s} \AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{acc} \AgdaSymbol{:} \AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n}\AgdaSymbol{)} \AgdaSymbol{→}\<%
+\\
+\>[2]\AgdaIndent{16}{}\<[16]%
+\>[16]\AgdaDatatype{Maybe} \AgdaSymbol{(}\AgdaFunction{Σ[} \AgdaBound{σ} \AgdaFunction{∈} \AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n} \AgdaFunction{]}\<%
+\\
+\>[16]\AgdaIndent{23}{}\<[23]%
+\>[23]\AgdaBound{σ} \AgdaFunction{extends} \AgdaBound{acc} \AgdaFunction{×} \AgdaFunction{substType} \AgdaSymbol{(}\AgdaField{proj₂} \AgdaBound{σ}\AgdaSymbol{)} \AgdaBound{s} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaSymbol{(}\AgdaField{proj₂} \AgdaBound{σ}\AgdaSymbol{)} \AgdaBound{t}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{amgu2} \AgdaInductiveConstructor{TInt} \<[15]%
+\>[15]\AgdaInductiveConstructor{TInt} \<[24]%
+\>[24]\AgdaBound{acc} \<[35]%
+\>[35]\AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{acc} \AgdaInductiveConstructor{,} \AgdaFunction{σextendsσ} \AgdaBound{acc} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{refl}\AgdaSymbol{)} \AgdaComment{-- just acc}\<%
+\\
+\>\AgdaFunction{amgu2} \AgdaInductiveConstructor{TInt} \<[15]%
+\>[15]\AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \AgdaBound{acc} \<[35]%
+\>[35]\AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaFunction{amgu2} \AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{⇒} \AgdaBound{s₁}\AgdaSymbol{)} \AgdaInductiveConstructor{TInt} \<[24]%
+\>[24]\AgdaBound{acc} \<[35]%
+\>[35]\AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaFunction{amgu2} \AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{⇒} \AgdaBound{s₁}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{t} \AgdaInductiveConstructor{⇒} \AgdaBound{t₁}\AgdaSymbol{)} \AgdaBound{acc} \<[35]%
+\>[35]\AgdaKeyword{with} \AgdaFunction{amgu2} \AgdaBound{s} \AgdaBound{t} \AgdaBound{acc}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{acc'} \AgdaInductiveConstructor{,} \AgdaBound{ex} \AgdaInductiveConstructor{,} \AgdaBound{eq}\AgdaSymbol{)} \AgdaKeyword{with} \AgdaFunction{amgu2} \AgdaBound{s₁} \AgdaBound{t₁} \AgdaBound{acc'}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{acc''} \AgdaInductiveConstructor{,} \AgdaBound{ex2} \AgdaInductiveConstructor{,} \AgdaBound{eq2}\AgdaSymbol{)} \AgdaSymbol{=}\<%
+\\
+\>[23]\AgdaIndent{36}{}\<[36]%
+\>[36]\AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{acc''} \AgdaInductiveConstructor{,} \AgdaSymbol{(λ} \AgdaBound{s₂} \AgdaBound{t₂} \AgdaSymbol{→} \AgdaBound{ex2} \AgdaBound{s₂} \AgdaBound{t₂} \AgdaFunction{∘} \AgdaBound{ex} \AgdaBound{s₂} \AgdaBound{t₂}\AgdaSymbol{)} \AgdaInductiveConstructor{,}\<%
+\\
+\>[36]\AgdaIndent{50}{}\<[50]%
+\>[50]\AgdaFunction{cong₂} \AgdaInductiveConstructor{\_⇒\_} \AgdaSymbol{(}\AgdaBound{ex2} \AgdaBound{s} \AgdaBound{t} \AgdaBound{eq}\AgdaSymbol{)} \AgdaBound{eq2}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{amgu2} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{y}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)} \AgdaKeyword{with} \AgdaFunction{flexFlex2} \AgdaBound{x} \AgdaBound{y} \AgdaComment{-- just (flexFlex x y)}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaSymbol{(}\AgdaBound{σ'} \AgdaInductiveConstructor{,} \AgdaBound{eq}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{σ'} \AgdaInductiveConstructor{,} \AgdaFunction{σextendsNil} \AgdaBound{σ'} \AgdaInductiveConstructor{,} \AgdaBound{eq}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{amgu2} \AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaBound{t} \<[24]%
+\>[24]\AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)} \AgdaKeyword{with} \AgdaFunction{flexRigid2} \AgdaBound{x} \AgdaBound{t}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{σ'} \AgdaInductiveConstructor{,} \AgdaBound{eq}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{σ'} \AgdaInductiveConstructor{,} \AgdaFunction{σextendsNil} \AgdaBound{σ'} \AgdaInductiveConstructor{,} \AgdaBound{eq}\AgdaSymbol{)}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaFunction{amgu2} \AgdaBound{t} \<[15]%
+\>[15]\AgdaSymbol{(}\AgdaInductiveConstructor{TVar} \AgdaBound{x}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{s} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)} \AgdaKeyword{with} \AgdaFunction{flexRigid2} \AgdaBound{x} \AgdaBound{t}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{σ'} \AgdaInductiveConstructor{,} \AgdaBound{eq}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{σ'} \AgdaInductiveConstructor{,} \AgdaFunction{σextendsNil} \AgdaBound{σ'} \AgdaInductiveConstructor{,} \AgdaFunction{sym} \AgdaBound{eq}\AgdaSymbol{)}\<%
+\\
+\>\AgdaSymbol{...} \<[34]%
+\>[34]\AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaFunction{amgu2} \AgdaSymbol{\{}\AgdaInductiveConstructor{suc} \AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{s} \AgdaBound{t} \AgdaSymbol{(}\AgdaBound{n} \AgdaInductiveConstructor{,} \AgdaBound{σ} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaKeyword{with} \AgdaFunction{amgu2} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{s}\AgdaSymbol{)} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t}\AgdaSymbol{)} \AgdaSymbol{(}\AgdaBound{n} \AgdaInductiveConstructor{,} \AgdaBound{σ}\AgdaSymbol{)}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{((}\AgdaBound{n'} \AgdaInductiveConstructor{,} \AgdaBound{σ'}\AgdaSymbol{)} \AgdaInductiveConstructor{,} \AgdaBound{ex} \AgdaInductiveConstructor{,} \AgdaBound{eq}\AgdaSymbol{)} \AgdaSymbol{=}\<%
+\\
+\>[0]\AgdaIndent{6}{}\<[6]%
+\>[6]\AgdaInductiveConstructor{just} \AgdaSymbol{((}\AgdaBound{n'} \AgdaInductiveConstructor{,} \AgdaBound{σ'} \AgdaInductiveConstructor{asnoc} \AgdaBound{r} \AgdaInductiveConstructor{/} \AgdaBound{z}\AgdaSymbol{)} \AgdaInductiveConstructor{,} \AgdaSymbol{(λ} \AgdaBound{s'} \AgdaBound{t'} \AgdaBound{ex'} \AgdaSymbol{→} \AgdaFunction{substTypeForEq2} \AgdaBound{σ'} \AgdaBound{r} \AgdaBound{z} \AgdaBound{s'} \AgdaBound{t'}\<%
+\\
+\>[6]\AgdaIndent{56}{}\<[56]%
+\>[56]\AgdaSymbol{(}\AgdaBound{ex} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{s'}\AgdaSymbol{)} \AgdaSymbol{((}\AgdaBound{r} \AgdaFunction{for} \AgdaBound{z}\AgdaSymbol{)} \AgdaFunction{◃} \AgdaBound{t'}\AgdaSymbol{)}\<%
+\\
+\>[56]\AgdaIndent{60}{}\<[60]%
+\>[60]\AgdaSymbol{(}\AgdaFunction{substTypeForEq1} \AgdaBound{σ} \AgdaBound{r} \AgdaBound{z} \AgdaBound{s'} \AgdaBound{t'} \AgdaBound{ex'}\AgdaSymbol{)))} \AgdaInductiveConstructor{,}\<%
+\\
+\>[0]\AgdaIndent{37}{}\<[37]%
+\>[37]\AgdaFunction{substTypeForEq2} \AgdaBound{σ'} \AgdaBound{r} \AgdaBound{z} \AgdaBound{s} \AgdaBound{t} \AgdaBound{eq}\AgdaSymbol{)}\<%
+\end{code}
+}
+
+\agdaSnippet\MguTwo{
+\begin{code}%
+\>\AgdaComment{-- 型 s と t を unify する代入を返す}\<%
+\\
+\>\AgdaFunction{mgu2} \AgdaSymbol{:} \AgdaSymbol{\{}\AgdaBound{m} \AgdaSymbol{:} \AgdaDatatype{ℕ}\AgdaSymbol{\}} \AgdaSymbol{→} \AgdaSymbol{(}\AgdaBound{s} \AgdaBound{t} \AgdaSymbol{:} \AgdaDatatype{Type} \AgdaBound{m}\AgdaSymbol{)} \AgdaSymbol{→}\<%
+\\
+\>[0]\AgdaIndent{7}{}\<[7]%
+\>[7]\AgdaDatatype{Maybe} \AgdaSymbol{(}\AgdaFunction{Σ[} \AgdaBound{n} \AgdaFunction{∈} \AgdaDatatype{ℕ} \AgdaFunction{]} \AgdaFunction{Σ[} \AgdaBound{σ} \AgdaFunction{∈} \AgdaDatatype{AList} \AgdaBound{m} \AgdaBound{n} \AgdaFunction{]} \AgdaFunction{substType} \AgdaBound{σ} \AgdaBound{s} \AgdaDatatype{≡} \AgdaFunction{substType} \AgdaBound{σ} \AgdaBound{t}\AgdaSymbol{)}\<%
+\\
+\>\AgdaFunction{mgu2} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{s} \AgdaBound{t} \AgdaKeyword{with} \AgdaFunction{amgu2} \AgdaSymbol{\{}\AgdaBound{m}\AgdaSymbol{\}} \AgdaBound{s} \AgdaBound{t} \AgdaSymbol{(}\AgdaBound{m} \AgdaInductiveConstructor{,} \AgdaInductiveConstructor{anil}\AgdaSymbol{)}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{((}\AgdaBound{n} \AgdaInductiveConstructor{,} \AgdaBound{σ}\AgdaSymbol{)} \AgdaInductiveConstructor{,} \AgdaBound{ex} \AgdaInductiveConstructor{,} \AgdaBound{eq}\AgdaSymbol{)} \AgdaSymbol{=} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{n} \AgdaInductiveConstructor{,} \AgdaBound{σ} \AgdaInductiveConstructor{,} \AgdaBound{eq}\AgdaSymbol{)}\<%
+\\
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing}\<%
+\end{code}
+}
