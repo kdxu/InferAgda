@@ -1,28 +1,23 @@
 module Infer where
 
 open import Data.Nat
+open import Data.Nat.Properties
 open import Data.Fin hiding (_+_; _≤_)
 open import Data.Vec
 open import Data.Product
 open import Data.Maybe
 open import Relation.Binary.PropositionalEquality
-open import Relation.Binary.HeterogeneousEquality
-  renaming (sym to hsym; trans to htrans; cong to hcong; cong₂ to hcong₂; subst to hsubst; subst₂ to hsubst₂; refl to hrefl)
-private module H = ≅-Reasoning
-
+open Relation.Binary.PropositionalEquality.≡-Reasoning
 open import lib
 open import Term
 
 --------------------------------------------------------------------------------
 
--- inferW Γ s : Γ のもとで s を型推論する。
--- もとの型変数の数が m だったとき、推論結果として (m', 代入, 型) を返す。
--- ここで m' は返って来た型の中に含まれる型変数の数。
--- あらかじめ s の中の Lam, App ノードに型変数をひとつ割り振ったとすると、
--- 型変数の合計は、もともと m + count s となる。
--- 返ってくる代入は、型変数の数を m + count s から m' に落とすものになる。
+{-
 infer : {m n : ℕ} →  (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
          Maybe (Σ[ m' ∈ ℕ ] AList (count s + m) m' × Type m')
+         -- infer : {m n : ℕ} →  (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
+            -- Maybe (Σ[ m' ∈ ℕ ] Σ[ m'' ∈ ℕ ] (m'' ≡ count s + m) × AList m'' m' × Type m')
 infer {m} Γ (Var x) = just (m , anil , lookup x Γ)
 infer {m} Γ (Lam s) with infer (TVar (fromℕ m) ∷ liftCxt 1 Γ) s -- TVar (fromℕ m) が引数の型
 ... | nothing = nothing -- s に型がつかなかった
@@ -45,13 +40,78 @@ infer {m} Γ (App s1 s2)
   just (m3 , σ3 +!+ (σ2' +!+ σ1') , substType σ3 (TVar (fromℕ m2))) 
   where σ1' : AList (count s1 + suc (count s2) + m) (suc (count s2 + m1))
         σ1' rewrite +-comm (count s1) (suc (count s2)) | +-assoc (count s2) (count s1) m
-          = liftAList (suc (count s2)) σ1
+          = liftAList (suc (count s2)) σ'
         σ2' : AList (suc (count s2 + m1)) (suc m2)
         σ2' = liftAList 1 σ2
+--}
+liftCxt≤ : {m m' n : ℕ} → (m ≤ m') → Cxt {m} n → Cxt {m'} n
+liftCxt≤ {m} {m'} {n} leq Γ = Data.Vec.map (▹◃ (λ x → inject≤ x leq)) Γ -- Data.Vec.map (▹◃ (inject+' m')) Γ
+
+substCxt≤ :{m m' m'' n : ℕ} → AList m m' → m'' ≤ m → Cxt {m''} n → Cxt {m'} n
+substCxt≤ σ leq Γ = substCxt σ (liftCxt≤ leq Γ)
+
+-- liftType m' t : t の中の型変数の数を m' だけ増やす
+liftType≤ : {m m' : ℕ} → m ≤ m' → Type m → Type m'
+liftType≤ leq t = ▹◃ (λ x → inject≤ x leq) t --▹◃ (inject+' m') t
+
+substType≤ : {m m' m'' : ℕ} → AList m m' → m'' ≤ m → Type m'' → Type m'
+substType≤ σ leq t = substType σ (liftType≤ leq t) --sub σ ◃ t
+
+
+--liftAList : {m m' : ℕ} {m'≤′m : m' ≤′ m} → (n : ℕ) → AList m'≤′m → AList (k+n≤′k+m n m'≤′m)
+--liftAList zero σ = σ
+--liftAList (suc n) σ = liftAList1 (liftAList n σ)
+--m'-m = d
+--d + m = m'
+-- n≤m+n∸m
+
+
+n≡m+n∸m : (m n : ℕ) → (m ≤ n) → n ≡ m + (n ∸ m)
+n≡m+n∸m zero n leq = refl
+n≡m+n∸m (suc m) zero ()
+n≡m+n∸m (suc m) (suc n) (s≤s leq) = cong suc (n≡m+n∸m m n leq) 
+
+liftAList≤ : {m m'  n : ℕ} → (ρ : AList m n) → (m ≤ m') →  AList m' (n + (m' ∸ m))
+liftAList≤ {m} {m'} {.m} (anil {m = .m}) leq rewrite sym (n≡m+n∸m m m' leq) = anil
+liftAList≤ {suc m} {suc m'} (r asnoc t' / x) (s≤s leq) = (liftAList≤ r leq) asnoc (liftType≤ leq t') / (inject≤ x (s≤s leq))
+
+
+-- ふたつの代入を不等号付きでくっつける
+_++<_>_ : {l m m' n : ℕ} → (ρ : AList m n) → (m ≤ m') → (σ : AList l m') →  AList l (n + (m' ∸ m))
+ρ ++< leq > σ = liftAList≤ ρ leq +!+ σ
 
 infer2 : {m n : ℕ} → (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
          Maybe (Σ[ m' ∈ ℕ ] Σ[ m'' ∈ ℕ ] (m'' ≡ count s + m) × AList m'' m' ×  Type m')
 
 infer2 {m} Γ (Var x) = just (m , (m , (refl , (anil , (lookup x Γ)))))
-infer2 Γ (Lam s) = {!!}
-infer2 Γ (App s1 s2) = {!!}
+infer2 {m} Γ (Lam s) with infer2 (TVar (fromℕ m) ∷ liftCxt 1 Γ) s
+infer2 Γ (Lam s) | nothing = nothing
+infer2 {m} Γ (Lam s) | just (m' , m'' , eq , σ , t) = just (m' , (m'' , (eq' , (σ , t)))) 
+       where eq' : (m'' ≡ suc (count s + m))
+             eq' = begin 
+                      m''
+                   ≡⟨ eq ⟩
+                     count s + suc m
+                   ≡⟨ +-suc (count s) m ⟩
+                     suc (count s + m)
+                   ∎
+infer2 {m} Γ (App s1 s2) with infer2 Γ s1
+infer2 Γ (App s1 s2) | nothing = nothing
+infer2 {m} Γ (App s1 s2) | just (m' , m'' , eq , σ , t)  with infer2 (substCxt≤ σ leq Γ) s2 -- liftcxt wo kutikusuru
+       where leq : m ≤ m''
+             leq rewrite eq = n≤m+n (count s1) m 
+-- m'' ≤ m , m' ≡  (m'' - (m - m'))
+-- substCxtが中で勝手にLift する
+infer2 Γ (App s1 s2) | just (m' , m'' , eq , σ , t) | nothing = nothing
+infer2 Γ (App s1 s2) | just (m' , m'' , eq , σ , t) | just (m2' , m2'' , eq2 , σ2 , t2) with unify (liftType 1 (substType≤ σ2 leq1 t)) (liftType 1 t2 ⇒ TVar (fromℕ m2'))
+      where leq1 : m' ≤ m2''
+            leq1 rewrite eq2 = n≤m+n (count s2) m'
+infer2 Γ (App s1 s2) | just (m' , m'' , eq , σ , t) | just (m2' , m2'' , eq2 , σ2 , t2) | nothing = nothing
+infer2 Γ (App s1 s2) | just (m' , m'' , eq , σ , t) | just (m2' , m2'' , eq2 , σ2 , t2) | just (m3 , σ3) = just (m3 , {!!} , ({!!} , ({!!} , (substType σ3 (TVar (fromℕ m2'))))))
+--  just (m3 , σ3 +!+ (σ2' +!+ σ1') , substType σ3 (TVar (fromℕ m2))) 
+--  where σ1' : AList (count s1 + suc (count s2) + m) (suc (count s2 + m1))
+--        σ1' rewrite +-comm (count s1) (suc (count s2)) | +-assoc (count s2) (count s1) m
+--          = liftAList (suc (count s2)) σ'
+--        σ2' : AList (suc (count s2 + m1)) (suc m2)
+--        σ2' = liftAList 1 σ2
+
