@@ -57,31 +57,25 @@ liftType≤ leq t = ▹◃ (λ x → inject≤ x leq) t --▹◃ (inject+' m') t
 substType≤ : {m m' m'' : ℕ} → AList m m' → m'' ≤ m → Type m'' → Type m'
 substType≤ σ leq t = substType σ (liftType≤ leq t) --sub σ ◃ t
 
-
---liftAList : {m m' : ℕ} {m'≤′m : m' ≤′ m} → (n : ℕ) → AList m'≤′m → AList (k+n≤′k+m n m'≤′m)
---liftAList zero σ = σ
---liftAList (suc n) σ = liftAList1 (liftAList n σ)
---m'-m = d
---d + m = m'
--- n≤m+n∸m
-
-
 n≡m+n∸m : (m n : ℕ) → (m ≤ n) → n ≡ m + (n ∸ m)
 n≡m+n∸m zero n leq = refl
 n≡m+n∸m (suc m) zero ()
 n≡m+n∸m (suc m) (suc n) (s≤s leq) = cong suc (n≡m+n∸m m n leq) 
 
-liftAList≤ : {m m'  n : ℕ} → (ρ : AList m n) → (m ≤ m') →  AList m' (n + (m' ∸ m))
-liftAList≤ {m} {m'} {.m} (anil {m = .m}) leq rewrite sym (n≡m+n∸m m m' leq) = anil
-liftAList≤ {suc m} {suc m'} (r asnoc t' / x) (s≤s leq) = (liftAList≤ r leq) asnoc (liftType≤ leq t') / (inject≤ x (s≤s leq))
-
+liftAList≤ : {l m m' : ℕ} → (σ : AList l m') → (m' ≤ m) →  AList (l + (m ∸ m')) m
+liftAList≤ {l} {m} {.l} (anil {m = .l}) leq rewrite sym (n≡m+n∸m l m leq) = anil
+liftAList≤ {.(suc m₁)} {m} {n} (_asnoc_/_ {m = m₁} {n = .n} σ t' x) leq = (liftAList≤ σ leq) asnoc (liftType≤ m₁≤m₁+m∸n t') / (inject≤ x (s≤s m₁≤m₁+m∸n))
+  where m₁≤m₁+m∸n : m₁ ≤ m₁ + (m ∸ n)
+        m₁≤m₁+m∸n = m≤m+n m₁ (m ∸ n)
 
 -- ふたつの代入を不等号付きでくっつける
-_++<_>_ : {l m m' n : ℕ} → (ρ : AList m n) → (m ≤ m') → (σ : AList l m') →  AList l (n + (m' ∸ m))
-ρ ++< leq > σ = liftAList≤ ρ leq +!+ σ
+_++<_>_ : {l m m' n : ℕ} → (ρ : AList m n) → (m' ≤ m) → (σ : AList l m') →  AList (l + (m ∸ m')) n
+ρ ++< leq > σ = ρ +!+ liftAList≤ σ leq -- liftAList≤ ρ leq +!+ σ
 
 infer2 : {m n : ℕ} → (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
          Maybe (Σ[ m' ∈ ℕ ] Σ[ m'' ∈ ℕ ] (m'' ≡ count s + m) × AList m'' m' ×  Type m')
+
+-- Maybe (Σ[ m' ∈ ℕ ] Σ[ m'' ∈ ℕ ] (m'' ≥ m')  × AList m'' m' ×  Type m')
 
 infer2 {m} Γ (Var x) = just (m , (m , (refl , (anil , (lookup x Γ)))))
 infer2 {m} Γ (Lam s) with infer2 (TVar (fromℕ m) ∷ liftCxt 1 Γ) s
@@ -107,11 +101,51 @@ infer2 Γ (App s1 s2) | just (m' , m'' , eq , σ , t) | just (m2' , m2'' , eq2 ,
       where leq1 : m' ≤ m2''
             leq1 rewrite eq2 = n≤m+n (count s2) m'
 infer2 Γ (App s1 s2) | just (m' , m'' , eq , σ , t) | just (m2' , m2'' , eq2 , σ2 , t2) | nothing = nothing
-infer2 Γ (App s1 s2) | just (m' , m'' , eq , σ , t) | just (m2' , m2'' , eq2 , σ2 , t2) | just (m3 , σ3) = just (m3 , {!!} , ({!!} , ({!!} , (substType σ3 (TVar (fromℕ m2'))))))
---  just (m3 , σ3 +!+ (σ2' +!+ σ1') , substType σ3 (TVar (fromℕ m2))) 
---  where σ1' : AList (count s1 + suc (count s2) + m) (suc (count s2 + m1))
---        σ1' rewrite +-comm (count s1) (suc (count s2)) | +-assoc (count s2) (count s1) m
---          = liftAList (suc (count s2)) σ'
---        σ2' : AList (suc (count s2 + m1)) (suc m2)
---        σ2' = liftAList 1 σ2
+infer2 {m} Γ (App s1 s2) | just (m' , m'' , eq , σ , t) | just (m2' , m2'' , eq2 , σ2 , t2) | just (m3 , σ3) = just (m3 , m'' + (m2'' ∸ m') + (suc m2' ∸ m2')   , (eq4 , ( σ3 ++< n≤1+n m2' > (σ2 ++< leq2 > σ)  , (substType σ3 (TVar (fromℕ m2'))))))
+  where leq2 : m' ≤ m2''
+        leq2 rewrite eq2 = n≤m+n (count s2) m'
+        eq3 : suc (count s2 + m'') ≡ count s1 + suc (count s2) + m
+        eq3 = sym
+              (begin 
+                count s1 + suc (count s2) + m
+              ≡⟨ +-assoc (count s1) (suc (count s2)) m ⟩
+              count s1 + (suc (count s2) + m)
+              ≡⟨ cong (λ x → count s1 + x) (sym (+-comm m (suc (count s2)))) ⟩
+                (count s1 + (m + suc (count s2)))
+              ≡⟨ sym (+-assoc (count s1) m (suc (count s2))) ⟩
+                (count s1 + m) + suc (count s2) 
+              ≡⟨ cong (λ x → x + suc (count s2)) (sym eq) ⟩
+                 m'' + suc (count s2)
+              ≡⟨ +-suc m'' (count s2) ⟩
+                suc (m'' + count s2)
+              ≡⟨ cong suc (+-comm m'' (count s2)) ⟩
+                suc (count s2 + m'')
+              ∎)
 
+        eq4 : m'' + (m2'' ∸ m') + (suc m2' ∸ m2') ≡ count s1 + suc (count s2) + m
+        eq4 rewrite eq | eq2 | eq3 =
+          begin
+            count s1 + m + (count s2 + m' ∸ m') + (suc m2' ∸ m2')
+          ≡⟨ cong (λ x → count s1 + m + x + (suc m2' ∸ m2')) (+-∸-assoc (count s2) (n≤m+n 0 m')) ⟩
+            count s1 + m + (count s2 + (m' ∸ m')) + (suc m2' ∸ m2')
+          ≡⟨ cong (λ x → count s1 + m + (count s2 + x) + (suc m2' ∸ m2')) (n∸n≡0 m') ⟩
+            count s1 + m + (count s2 + 0) + (suc m2' ∸ m2')
+          ≡⟨ cong (λ x → count s1 + m + x + (suc m2' ∸ m2')) (+-comm (count s2) 0) ⟩
+            count s1 + m + (count s2) + (suc m2' ∸ m2')
+          ≡⟨ refl ⟩
+            count s1 + m + (count s2) + (1 + m2' ∸ m2')
+          ≡⟨ cong (λ x → count s1 + m + count s2 + x) (+-∸-assoc 1 (n≤m+n 0 m2')) ⟩
+            count s1 + m + (count s2) + (1 + (m2' ∸ m2'))
+          ≡⟨ cong (λ x → count s1 + m + count s2 + (1 + x)) (n∸n≡0 m2') ⟩
+            ((count s1 + m) + (count s2)) + 1
+          ≡⟨ +-assoc (count s1 + m) (count s2) (suc zero) ⟩
+            (count s1 + m) + ((count s2) + 1)
+          ≡⟨ cong (λ x → count s1 + m + x) (+-comm (count s2) 1) ⟩
+            count s1 + m + suc (count s2) 
+          ≡⟨ +-assoc (count s1) m (suc (count s2)) ⟩
+            count s1 + (m + suc (count s2))
+          ≡⟨ cong (λ x → count s1 + x) (+-comm m (suc (count s2))) ⟩
+            count s1 + (suc (count s2) + m)
+          ≡⟨ sym (+-assoc (count s1) (suc (count s2)) m) ⟩
+            count s1 + suc (count s2) + m
+          ∎
