@@ -201,27 +201,23 @@ inferW : (m : ℕ) → {n : ℕ} →  (Γ : Cxt {m} n) → (s : WellScopedTerm n
                 (m ≤ m'') × AListType m'' m' × Type m')
 inferW m Γ (Var x) = just (m , m , n≤m+n 0 m , anil , lookup x Γ)
 inferW m Γ (Lam s) with inferW (suc m) (TVar (fromℕ m) ∷ liftCxt 1 Γ) s
-                                      -- TVar (fromℕ m) が引数の型
-... | nothing = nothing
-... | just (m'' , m' , 1+m≤m'' , σ , t) =
+inferW m Γ (Lam s) | nothing = nothing
+inferW m Γ (Lam s) | just (m'' , m' , 1+m≤m'' , σ , t) =
   just (m'' , m' , m≤m'' , σ , tx ⇒ t)
-  where m≤m'' : m ≤ m''
-        m≤m'' = DecTotalOrder.trans decTotalOrder (n≤m+n 1 m) 1+m≤m''
-        tx : Type m'
-        tx = substType≤ σ 1+m≤m'' (TVar (fromℕ m)) -- σ m
-inferW m Γ (App s1 s2)
-      with inferW m Γ s1
-... | nothing = nothing -- s1 に型がつかなかった
-... | just (m1' , m1 , m≤m1' , σ1 , t1) -- s1 の型が t1
-      with inferW m1 (substCxt≤ σ1 m≤m1' Γ) s2
-... | nothing = nothing -- s2 に型がつかなかった
-... | just (m2' , m2 , m1≤m2' , σ2 , t2)
-      -- s2 の型が t2。m2 を App s1 s2 の返り値の型
+    where m≤m'' : m ≤ m''
+          m≤m'' = DecTotalOrder.trans decTotalOrder (n≤m+n 1 m) 1+m≤m''
+          tx : Type m'
+          tx = substType≤ σ 1+m≤m'' (TVar (fromℕ m)) 
+inferW m Γ (App s1 s2)  with inferW m Γ s1
+inferW m Γ (App s1 s2) | nothing = nothing
+inferW m Γ (App s1 s2) | just  (m1' , m1 , m≤m1' , σ1 , t1) with inferW m1 (substCxt≤ σ1 m≤m1' Γ) s2
+inferW m Γ (App s1 s2) | just (m1' , m1 , m≤m1' , σ1 , t1) | nothing = nothing
+inferW m Γ (App s1 s2) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2' , m2 , m1≤m2' , σ2 , t2)
       with mgu (liftType 1 (substType≤ σ2 m1≤m2' t1)) -- t1
                (liftType 1 t2 ⇒ TVar (fromℕ m2)) -- t2 ⇒ TVar (fromℕ m2)
-... | nothing = nothing -- unify できなかった
-... | just (m3 , σ3) =
-  just (suc m2 ∸ m2 + (m2' ∸ m1 + m1') , m3 , leq ,
+inferW m Γ (App s1 s2) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2' , m2 , m1≤m2' , σ2 , t2) | nothing = nothing
+inferW m Γ (App s1 s2) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2' , m2 , m1≤m2' , σ2 , t2) | just (m3 , σ3) =
+       just (suc m2 ∸ m2 + (m2' ∸ m1 + m1') , m3 , leq ,
         σ3 +⟨ n≤m+n 1 m2 ⟩ (σ2 +⟨ m1≤m2' ⟩ σ1) ,
         substType σ3 (TVar (fromℕ m2))) 
   where leq : m ≤ suc m2 ∸ m2 + (m2' ∸ m1 + m1')
@@ -235,6 +231,21 @@ inferW m Γ (App s1 s2)
                 suc m2 ∸ m2 + (m2' ∸ m1 + m1')
               □
 
+inferW m Γ (Fst t) with inferW m Γ t
+inferW m Γ (Fst t) | nothing = nothing
+inferW m Γ (Fst t) | just (m1' , m1 , m≤m1' , σ1 , t1)
+         with mgu  (liftType 2 t1)  (liftType 1 (TVar (fromℕ m1)) ∏ ((TVar (fromℕ (suc m1)))))
+inferW m Γ (Fst t) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2 , σ2) = just (suc (suc m1) ∸ m1 + m1' , (m2 , ({!!} , (σ2 +⟨ {!!} ⟩ σ1 , substType σ2 (liftType 1 (TVar (fromℕ m1)))))))
+inferW m Γ (Fst t) | just (m1' , m1 , m≤m1' , σ1 , t1) | nothing = nothing
+inferW m Γ (Snd t) with inferW m Γ t
+inferW m Γ (Snd t) | nothing = nothing
+inferW m Γ (Snd t) | just  (m1' , m1 , m≤m1' , σ1 , t1) with mgu  (liftType 2 t1)  (liftType 1 (TVar (fromℕ m1)) ∏ ((TVar (fromℕ (suc m1)))))
+inferW m Γ (Snd t) | just (m1' , m1 , m≤m1' , σ1 , t1) | nothing = nothing
+inferW m Γ (Snd t) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2 , σ2) = just (suc (suc m1) ∸ m1 + m1' , (m2 , ({!!} , (σ2 +⟨ {!!} ⟩ σ1 , substType σ2 (TVar (fromℕ (suc m1)))))))
+
+inferW m Γ (Cons t t₁) with inferW m Γ t
+inferW m Γ (Cons t t₁) | just x = ?
+inferW m Γ (Cons t t₁) | nothing = ?
 {-
 -- test
 
