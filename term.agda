@@ -51,16 +51,20 @@ suc+-lem m n l rewrite +-suc n l | sym (+-assoc l n m) | +-comm n l = refl
 -- 型：t = TNat | t ⇒ t | TVar x
 
 TypeDesc : Desc
-TypeDesc = base :+: rec :*: rec
+TypeDesc = base :+: rec :*: rec :+: rec :*: rec
 
 Type : (m : ℕ) → Set
 Type m = Fix TypeDesc m
 
 TNat : {m : ℕ} → Type m
-TNat = F (inj₁ tt)
+TNat = F (inj₁ (inj₁ tt)) -- F (inj₁ tt)
 
 _⇒_ : {m : ℕ} → Type m → Type m → Type m
-t1 ⇒ t2 = F (inj₂ (t1 , t2))
+t1 ⇒ t2 = F (inj₁ (inj₂ (t1 , t2)))
+
+-- pair
+_∏_ : {m : ℕ} → Type m → Type m → Type m
+t1 ∏ t2 = F (inj₂ (t1 , t2))
 
 TVar : {m : ℕ} → (x : Fin m) → Type m
 TVar = M
@@ -118,6 +122,10 @@ data WellScopedTerm (n : ℕ) : Set where
   Var : Fin n → WellScopedTerm n
   Lam : (s : WellScopedTerm (suc n)) → WellScopedTerm n
   App : (s1 : WellScopedTerm n) → (s2 : WellScopedTerm n) → WellScopedTerm n
+  Fst : WellScopedTerm n → WellScopedTerm n
+  Snd : WellScopedTerm n → WellScopedTerm n
+  Cons : WellScopedTerm n → WellScopedTerm n → WellScopedTerm n
+
 
 -- WellTypedTerm Γ t : 自由変数の数が n 個、型が t であるような well-typed な項
 data WellTypedTerm {m n : ℕ} (Γ : Cxt n) : Type m → Set where
@@ -126,6 +134,9 @@ data WellTypedTerm {m n : ℕ} (Γ : Cxt n) : Type m → Set where
         WellTypedTerm Γ (t ⇒ t')
   App : {t t' : Type m} → WellTypedTerm Γ (t ⇒ t') → WellTypedTerm Γ t →
         WellTypedTerm Γ t'
+  Fst : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t1
+  Snd : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t2
+  Cons :  {t1 t2 : Type m} → WellTypedTerm Γ t1 → WellTypedTerm Γ t2 → WellTypedTerm Γ (t1 ∏ t2)  
 
 {-
 -- lookup と liftCxt は順番を変えても良い
