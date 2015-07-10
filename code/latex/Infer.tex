@@ -68,10 +68,8 @@
 \\
 \>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{nothing} \AgdaSymbol{=} \AgdaInductiveConstructor{nothing} \AgdaComment{-- s に型がつかなかった}\<%
 \\
-\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{m'} \AgdaInductiveConstructor{,} \AgdaBound{σ} \AgdaInductiveConstructor{,} \AgdaBound{t}\AgdaSymbol{)} \AgdaSymbol{=}\<%
-\\
-\>[0]\AgdaIndent{2}{}\<[2]%
-\>[2]\AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{m'} \AgdaInductiveConstructor{,} \AgdaFunction{σ'} \AgdaInductiveConstructor{,} \AgdaFunction{tx} \AgdaInductiveConstructor{⇒} \AgdaBound{t}\AgdaSymbol{)} \AgdaComment{-- TVar (fromℕ m) ⇒ t が Lam s の型}\<%
+\>\AgdaSymbol{...} \AgdaSymbol{|} \AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{m'} \AgdaInductiveConstructor{,} \AgdaBound{σ} \AgdaInductiveConstructor{,} \AgdaBound{t}\AgdaSymbol{)} \AgdaSymbol{=} \<[27]%
+\>[27]\AgdaInductiveConstructor{just} \AgdaSymbol{(}\AgdaBound{m'} \AgdaInductiveConstructor{,} \AgdaFunction{σ'} \AgdaInductiveConstructor{,} \AgdaFunction{tx} \AgdaInductiveConstructor{⇒} \AgdaBound{t}\AgdaSymbol{)} \AgdaComment{-- TVar (fromℕ m) ⇒ t が Lam s の型}\<%
 \\
 \>[0]\AgdaIndent{2}{}\<[2]%
 \>[2]\AgdaKeyword{where} \AgdaFunction{σ'} \AgdaSymbol{:} \AgdaDatatype{AList} \AgdaSymbol{(}\AgdaInductiveConstructor{suc} \AgdaSymbol{(}\AgdaFunction{count} \AgdaBound{s} \AgdaPrimitive{+} \AgdaBound{m}\AgdaSymbol{))} \AgdaBound{m'} \<[42]%

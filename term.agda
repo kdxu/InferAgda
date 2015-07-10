@@ -7,7 +7,8 @@ open import Data.Nat
 open import Data.Nat.Properties
  -- for the concrete record, such as isCommutativeSemiring
 open import Data.Fin hiding (_+_; _≤_)
-open ≤-Reasoning renaming (begin_ to start_; _∎ to _□)
+
+open ≤-Reasoning renaming (begin_ to start_; _∎ to _□; _≡⟨_⟩_ to ≡⟪_⟫_)
 open import Data.Product
 open import Data.Sum
 open import Data.Vec 
@@ -15,6 +16,8 @@ open import Data.Maybe
 open import Relation.Binary hiding (_⇒_)
  -- for DecTotalOrder.trans 
 open import Relation.Binary.PropositionalEquality
+open Relation.Binary.PropositionalEquality.≡-Reasoning
+
 -- open Relation.Binary.PropositionalEquality.≡-Reasoning
 -- open import Relation.Binary.HeterogeneousEquality
   -- renaming (sym to hsym; trans to htrans; cong to hcong; cong₂ to hcong₂; subst to hsubst; subst₂ to hsubst₂; refl to hrefl)
@@ -51,16 +54,20 @@ suc+-lem m n l rewrite +-suc n l | sym (+-assoc l n m) | +-comm n l = refl
 -- 型：t = TNat | t ⇒ t | TVar x
 
 TypeDesc : Desc
-TypeDesc = base :+: rec :*: rec
+TypeDesc = base :+: rec :*: rec :+: rec :*: rec
 
 Type : (m : ℕ) → Set
 Type m = Fix TypeDesc m
 
 TNat : {m : ℕ} → Type m
-TNat = F (inj₁ tt)
+TNat = F (inj₁ (inj₁ tt)) -- F (inj₁ tt)
 
 _⇒_ : {m : ℕ} → Type m → Type m → Type m
-t1 ⇒ t2 = F (inj₂ (t1 , t2))
+t1 ⇒ t2 = F (inj₁ (inj₂ (t1 , t2)))
+
+-- pair
+_∏_ : {m : ℕ} → Type m → Type m → Type m
+t1 ∏ t2 = F (inj₂ (t1 , t2))
 
 TVar : {m : ℕ} → (x : Fin m) → Type m
 TVar = M
@@ -73,6 +80,15 @@ liftType m' t = liftFix {TypeDesc} m' t
 
 liftType≤ : {m m' : ℕ} → (m≤m' : m ≤ m') → Type m → Type m'
 liftType≤ m≤m' t = liftFix≤ {TypeDesc} m≤m' t
+
+lem3 :  {m : ℕ} → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
+lem3 m≤m x = begin
+             (liftType≤ m≤m x)
+             ≡⟨ refl ⟩
+               liftFix≤ {TypeDesc} m≤m x
+             ≡⟨ {!!} ⟩
+               x
+             ∎
 
 substType : {m m' : ℕ} → AListType m m' → Type m → Type m' 
 substType σ t = substFix {TypeDesc} σ t
@@ -99,6 +115,8 @@ liftCxtZero : {m n : ℕ} → (Γ : Cxt {m} n) → liftCxt 0 Γ ≡ Γ
 liftCxtZero [] = refl
 liftCxtZero (t ∷ Γ) = cong₂ _∷_ (M-id t) (liftCxtZero Γ)
 
+--liftCxt≤Zero  : {m n : ℕ} → (Γ : Cxt {m} n) → (m≤m : m ≤ m) → liftCxt 0 Γ ≡ Γ
+
 -- substCxt σ Γ : Γ に σ を適用した型環境を返す
 substCxt : {m m' n : ℕ} → AListType m m' → Cxt {m} n → Cxt {m'} n 
 substCxt σ Γ = Data.Vec.map (substType σ) Γ 
@@ -113,11 +131,19 @@ substCxtAnil : {m n : ℕ} → (Γ : Cxt {m} n) → substCxt anil Γ ≡ Γ
 substCxtAnil [] = refl
 substCxtAnil (x ∷ Γ) = cong₂ _∷_ (M-id x) (substCxtAnil Γ)
 
+substCxt≤Anil : {m n : ℕ} → (Γ : Cxt {m} n) → (m≤m : m ≤ m) → substCxt≤ anil m≤m Γ ≡ Γ 
+substCxt≤Anil [] m≤m = refl
+substCxt≤Anil (x ∷ Γ) m≤m = cong₂ _∷_ {!liftCxt≤Zero!} (substCxt≤Anil Γ m≤m)
+
 -- 自由変数の数が n 個の well-socpe な項
 data WellScopedTerm (n : ℕ) : Set where
   Var : Fin n → WellScopedTerm n
   Lam : (s : WellScopedTerm (suc n)) → WellScopedTerm n
   App : (s1 : WellScopedTerm n) → (s2 : WellScopedTerm n) → WellScopedTerm n
+  Fst : WellScopedTerm n → WellScopedTerm n
+  Snd : WellScopedTerm n → WellScopedTerm n
+  Cons : WellScopedTerm n → WellScopedTerm n → WellScopedTerm n
+
 
 -- WellTypedTerm Γ t : 自由変数の数が n 個、型が t であるような well-typed な項
 data WellTypedTerm {m n : ℕ} (Γ : Cxt n) : Type m → Set where
@@ -126,6 +152,9 @@ data WellTypedTerm {m n : ℕ} (Γ : Cxt n) : Type m → Set where
         WellTypedTerm Γ (t ⇒ t')
   App : {t t' : Type m} → WellTypedTerm Γ (t ⇒ t') → WellTypedTerm Γ t →
         WellTypedTerm Γ t'
+  Fst : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t1
+  Snd : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t2
+  Cons :  {t1 t2 : Type m} → WellTypedTerm Γ t1 → WellTypedTerm Γ t2 → WellTypedTerm Γ (t1 ∏ t2)  
 
 {-
 -- lookup と liftCxt は順番を変えても良い
@@ -185,32 +214,31 @@ diff (s≤s m≤m') = suc (diff m≤m')
 -- 返ってくる代入は、型変数の数を m + count s から m' に落とすものになる。
 
 -- 不等式を入れて具体的な値を書かないようにしたバージョン
+lemma1 : {m m1 m1' : ℕ} → (m ≤ m1') → (m ≤ suc (suc m1) ∸ m1 + m1')
+lemma1 {m} {m1} {m1'} leq rewrite m+n∸n≡m 2 m1 = ≤-steps (suc (suc zero)) leq
+
 inferW : (m : ℕ) → {n : ℕ} →  (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
          Maybe (Σ[ m'' ∈ ℕ ] Σ[ m' ∈ ℕ ]
                 (m ≤ m'') × AListType m'' m' × Type m')
 inferW m Γ (Var x) = just (m , m , n≤m+n 0 m , anil , lookup x Γ)
 inferW m Γ (Lam s) with inferW (suc m) (TVar (fromℕ m) ∷ liftCxt 1 Γ) s
-                                      -- TVar (fromℕ m) が引数の型
-... | nothing = nothing
-... | just (m'' , m' , 1+m≤m'' , σ , t) =
+inferW m Γ (Lam s) | nothing = nothing
+inferW m Γ (Lam s) | just (m'' , m' , 1+m≤m'' , σ , t) =
   just (m'' , m' , m≤m'' , σ , tx ⇒ t)
-  where m≤m'' : m ≤ m''
-        m≤m'' = DecTotalOrder.trans decTotalOrder (n≤m+n 1 m) 1+m≤m''
-        tx : Type m'
-        tx = substType≤ σ 1+m≤m'' (TVar (fromℕ m)) -- σ m
-inferW m Γ (App s1 s2)
-      with inferW m Γ s1
-... | nothing = nothing -- s1 に型がつかなかった
-... | just (m1' , m1 , m≤m1' , σ1 , t1) -- s1 の型が t1
-      with inferW m1 (substCxt≤ σ1 m≤m1' Γ) s2
-... | nothing = nothing -- s2 に型がつかなかった
-... | just (m2' , m2 , m1≤m2' , σ2 , t2)
-      -- s2 の型が t2。m2 を App s1 s2 の返り値の型
+    where m≤m'' : m ≤ m''
+          m≤m'' = DecTotalOrder.trans decTotalOrder (n≤m+n 1 m) 1+m≤m''
+          tx : Type m'
+          tx = substType≤ σ 1+m≤m'' (TVar (fromℕ m)) 
+inferW m Γ (App s1 s2)  with inferW m Γ s1
+inferW m Γ (App s1 s2) | nothing = nothing
+inferW m Γ (App s1 s2) | just  (m1' , m1 , m≤m1' , σ1 , t1) with inferW m1 (substCxt≤ σ1 m≤m1' Γ) s2
+inferW m Γ (App s1 s2) | just (m1' , m1 , m≤m1' , σ1 , t1) | nothing = nothing
+inferW m Γ (App s1 s2) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2' , m2 , m1≤m2' , σ2 , t2)
       with mgu (liftType 1 (substType≤ σ2 m1≤m2' t1)) -- t1
                (liftType 1 t2 ⇒ TVar (fromℕ m2)) -- t2 ⇒ TVar (fromℕ m2)
-... | nothing = nothing -- unify できなかった
-... | just (m3 , σ3) =
-  just (suc m2 ∸ m2 + (m2' ∸ m1 + m1') , m3 , leq ,
+inferW m Γ (App s1 s2) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2' , m2 , m1≤m2' , σ2 , t2) | nothing = nothing
+inferW m Γ (App s1 s2) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2' , m2 , m1≤m2' , σ2 , t2) | just (m3 , σ3) =
+       just (suc m2 ∸ m2 + (m2' ∸ m1 + m1') , m3 , leq ,
         σ3 +⟨ n≤m+n 1 m2 ⟩ (σ2 +⟨ m1≤m2' ⟩ σ1) ,
         substType σ3 (TVar (fromℕ m2))) 
   where leq : m ≤ suc m2 ∸ m2 + (m2' ∸ m1 + m1')
@@ -223,6 +251,23 @@ inferW m Γ (App s1 s2)
               ≤⟨ n≤m+n (suc m2 ∸ m2) (m2' ∸ m1 + m1') ⟩
                 suc m2 ∸ m2 + (m2' ∸ m1 + m1')
               □
+inferW m Γ (Fst t) with inferW m Γ t
+inferW m Γ (Fst t) | nothing = nothing
+inferW m Γ (Fst t) | just (m1' , m1 , m≤m1' , σ1 , t1)
+         with mgu  (liftType 2 t1)  (liftType 1 (TVar (fromℕ m1)) ∏ ((TVar (fromℕ (suc m1)))))
+inferW m Γ (Fst t) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2 , σ2) = just (suc (suc m1) ∸ m1 + m1' , (m2 , (lemma1 {m} {m1} {m1'} m≤m1' , (σ2 +⟨ ≤-steps 2 (n≤m+n 0 m1) ⟩ σ1 , substType σ2 (liftType 1 (TVar (fromℕ m1)))))))
+inferW m Γ (Fst t) | just (m1' , m1 , m≤m1' , σ1 , t1) | nothing = nothing
+inferW m Γ (Snd t) with inferW m Γ t
+inferW m Γ (Snd t) | nothing = nothing
+inferW m Γ (Snd t) | just  (m1' , m1 , m≤m1' , σ1 , t1) with mgu  (liftType 2 t1)  (liftType 1 (TVar (fromℕ m1)) ∏ ((TVar (fromℕ (suc m1)))))
+inferW m Γ (Snd t) | just (m1' , m1 , m≤m1' , σ1 , t1) | nothing = nothing
+inferW m Γ (Snd t) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2 , σ2) = just (suc (suc m1) ∸ m1 + m1' , (m2 , (lemma1 {m} {m1} {m1'} m≤m1' , (σ2 +⟨ ≤-steps 2 (n≤m+n 0 m1) ⟩ σ1 , substType σ2 (TVar (fromℕ (suc m1)))))))
+
+inferW m Γ (Cons t t₁) with inferW m Γ t
+inferW m Γ (Cons t t₁) | nothing = nothing
+inferW m Γ (Cons t t₁) | just(m1' , m1 , m≤m1' , σ1 , t1) with mgu  (liftType 2 t1)  (liftType 1 (TVar (fromℕ m1)) ∏ ((TVar (fromℕ (suc m1)))))
+inferW m Γ (Cons t t₁) | just (m1' , m1 , m≤m1' , σ1 , t1) | just (m2 , σ2) = just (suc (suc m1) ∸ m1 + m1' , (m2 , (lemma1 {m} {m1} {m1'} m≤m1' , (σ2 +⟨ ≤-steps 2 (n≤m+n 0 m1) ⟩ σ1 , substType σ2 (TVar (fromℕ (suc m1)))))))
+inferW m Γ (Cons t t₁) | just (m1' , m1 , m≤m1' , σ1 , t1) | nothing = nothing
 
 {-
 -- test

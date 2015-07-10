@@ -281,9 +281,8 @@ liftAList : {D : Desc} → {m m' : ℕ} →
             (n : ℕ) → AList D m m' → AList D (n + m) (n + m')
 liftAList zero σ = σ
 liftAList (suc n) σ = liftAList1 (liftAList n σ)
-
-m'∸m+m≡m'‌ : {m m' : ℕ} → m ≤ m' → m' ∸ m + m ≡ m'
-m'∸m+m≡m'‌ {m} {m'} m≤m' = begin
+m'∸m+m≡m' : {m m' : ℕ} → m ≤ m' → m' ∸ m + m ≡ m'
+m'∸m+m≡m' {m} {m'} m≤m' = begin
   m' ∸ m + m   ≡⟨ +-comm (m' ∸ m) m ⟩
   m + (m' ∸ m) ≡⟨ m+n∸m≡n m≤m' ⟩
   m'           ∎
@@ -293,7 +292,7 @@ liftAList≤ : {D : Desc} → {l m m' : ℕ} → (m≤m' : m ≤ m') →
              AList D l m → AList D ((m' ∸ m) + l) m'
 liftAList≤ {D} {l} {m} {m'} m≤m' σ =
   subst (λ n → AList D ((m' ∸ m) + l) n)
-        (m'∸m+m≡m'‌ m≤m')
+        ( m'∸m+m≡m' m≤m')
         (liftAList (m' ∸ m) σ)
 
 -- ふたつの代入をくっつける
