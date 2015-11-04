@@ -262,7 +262,6 @@ _for_ t' x y with thick x y
 ... | nothing = t'
 
 -- 代入 (σ : AList m n) 関係
-
 -- AList D m n : m 個の型変数を持つ型を n 個の型変数を持つ型にする代入
 data AList (D : Desc) : ℕ → ℕ → Set where
   anil : {m : ℕ} → AList D m m -- 何もしない代入
@@ -320,8 +319,6 @@ substFix σ t = mvar-map (mvar-sub σ) t
 substFix≤ : {D : Desc} → {m m' m'' : ℕ} → AList D m'' m' →
             (m≤m'' : m ≤ m'') → Fix D m → Fix D m'
 substFix≤ σ m≤m'' t = mvar-map (mvar-sub σ) (liftFix≤ m≤m'' t)
-
---
 
 -- 型変数 x と y を unify する代入を返す 
 flexFlex : {D : Desc} → {m : ℕ} → (x y : Fin m) → Σ[ m' ∈ ℕ ] AList D m m'
