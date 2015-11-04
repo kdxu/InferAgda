@@ -18,41 +18,8 @@ open import Relation.Binary hiding (_⇒_)
 open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
 
--- open Relation.Binary.PropositionalEquality.≡-Reasoning
--- open import Relation.Binary.HeterogeneousEquality
-  -- renaming (sym to hsym; trans to htrans; cong to hcong; cong₂ to hcong₂; subst to hsubst; subst₂ to hsubst₂; refl to hrefl)
--- --open Relation.Binary.HeterogeneousEquality
--- private module H = ≅-Reasoning
--- open import Algebra.Structures
- -- -- for type definitions, such as IsCommutativeSemiring
--- private module M = IsCommutativeSemiring
-
---------------------------------------------------------------------------------
-{-
-+-right-identity : ∀ n → n + 0 ≡ n
-+-right-identity = proj₂ (M.+-identity isCommutativeSemiring)
-
-+-left-identity : ∀ n → 0 + n ≡ n
-+-left-identity = proj₁ (M.+-identity isCommutativeSemiring)
-
-+-assoc : ∀ m n o → (m + n) + o ≡  m + (n + o)
-+-assoc = M.+-assoc isCommutativeSemiring
-
-+-comm : ∀ m n → m + n ≡  n + m
-+-comm = M.+-comm isCommutativeSemiring
-
-+-suc : ∀ m n → m + suc n ≡ suc (m + n)
-+-suc zero n = refl
-+-suc (suc m) n = cong suc (+-suc m n)
-
-suc+-lem : ∀ m n l →  suc (l + (n + m)) ≡ n + (suc l) + m
-suc+-lem m n l rewrite +-suc n l | sym (+-assoc l n m) | +-comm n l = refl
-
--- +-suc m n rewrite +-comm m n = +-comm m (suc n)
--}
 
 -- 型：t = TNat | t ⇒ t | TVar x
-
 TypeDesc : Desc
 TypeDesc = base :+: rec :*: rec :+: rec :*: rec
 

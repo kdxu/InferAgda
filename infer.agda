@@ -8,7 +8,6 @@ open import Data.Product
 open import Data.Maybe
 open import Relation.Binary.PropositionalEquality
 open ≤-Reasoning renaming (begin_ to start_; _∎ to _□)
-
 open import mgu
 open import term
 
