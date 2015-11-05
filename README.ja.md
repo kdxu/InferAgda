@@ -3,6 +3,14 @@ InferAgda
 Agdaによる'正当性が保証された'型推論器です。
 型推論のアルゴリズムとしてW-アルゴリズムを採用しています。
 
+キーワード
+-----
+
++ Agda
++ 依存型
++ 型推論
++ W-algorithm
+
 Agdaのインストール・セットアップ方法
 ------
 
@@ -24,7 +32,13 @@ http://wiki.portal.chalmers.se/agda/pmwiki.php
 + specify "Agda include dirs" e.g. `/users/kyoko/agda-stdlib/src`  
 + select `Save for Future Sessions`
 
-you can compile and load agda file with `C-c C-l`.
+
+依存型について
+-----
+依存型は値に依存する型のことであり、例えば`List n` (`n` は自然数) という型は「長さ `n` のリスト」という意味を持つ型の
+ことです。
+これを応用すると「`Int` 型を持つ項」などを表現することも可能になります。
+
 
 
 このソースコードの構造
@@ -35,14 +49,16 @@ you can compile and load agda file with `C-c C-l`.
 
 ## infer.agda
 
+証明付きの型推論を行う関数`infer`と、その補助関数が記述されています。
+
 ## term.agda
 
 このモジュールでは、型推論を行う well-scoped な term と well-typed な term を定義しています。
 
 ### well-scoped term
 
-the word 'well-scoped' implies all terms have a parameter `n` that counts
-free variables with type level.(a simple example of dependant types)
+well-scoped term は、型レベルで `n` というパラメータを持つ term です。
+この` n` は、 term の中の自由変数の数を表しています。
 
 #### definition
 
@@ -58,13 +74,12 @@ WellScopedTerm n :=
   Snd : WellScopedTerm n → WellScopedTerm n  
   Cons : WellScopedTerm n → WellScopedTerm n → WellScopedTerm n  
 
-note: the type `Fin n` explains 'finite set', has a finite set of 0 ~ n-1.
+note:  `Fin n` 型は 0~n-1の自然数の有限集合をもつ型のことです。
 
 
 ### well-typed term
 
-this term has two parameters with type level, type context and type.
-so, this term is certified that has correct type `t` with the context `Γ `.
+型環境`Γ`と型`t`を（また型レベルの）パラメータとして持ち歩く term です。
 
 #### definition
 
@@ -78,14 +93,24 @@ WellTypedTerm (Γ : Cxt n)  (t : Type m) :=
   Snd : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t2  
   Cons :  {t1 t2 : Type m} → WellTypedTerm Γ t1 → WellTypedTerm Γ t2 → WellTypedTerm Γ (t1 ∏ t2)  
 
-the type `Type` is discribed in the module mgu.
+note : `Type` 型の実装は、`mgu` モジュールに記述されています。
 
 ## mgu.agda
 
+最汎の単一化子 (most general unifier) を求める関数 `mgu` が記述されて
+います。
 
 型推論とその定式化の仕組み
 -----
 
+
+進行状況
+-----
+:innocent:
+
+
+参考文献
+-----
 
 License
 -----
