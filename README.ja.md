@@ -100,8 +100,13 @@ note : `Type` 型の実装は、`mgu` モジュールに記述されています
 ### Type の定義
 `Type` を定義するにあたり `Desc` 型を用います。
 `Desc` は型の再帰やコンストラクタの記述を抽象化したものです。
-```agda
 
+```agda
+data Desc : Set₁ where
+  base  : Desc
+  _:+:_ : Desc → Desc → Desc
+  _:*:_ : Desc → Desc → Desc
+  rec   : Desc
 ```
 
 
