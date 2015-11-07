@@ -25,13 +25,11 @@ private module M = IsCommutativeSemiring
 
 infixl 6 _:+:_
 infixl 7 _:*:_
-
 data Desc : Set₁ where
   base  : Desc
   _:+:_ : Desc → Desc → Desc
   _:*:_ : Desc → Desc → Desc
   rec   : Desc
-
 ⟦_⟧ : Desc → Set → Set
 ⟦ base      ⟧ X = ⊤
 ⟦ d1 :+: d2 ⟧ X = ⟦ d1 ⟧ X ⊎ ⟦ d2 ⟧ X
