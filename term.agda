@@ -14,10 +14,10 @@ open import Data.Sum
 open import Data.Vec 
 open import Data.Maybe
 open import Relation.Binary hiding (_⇒_)
+open import Function using (_∘_)
  -- for DecTotalOrder.trans 
 open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
-
 
 -- 型：t = TNat | t ⇒ t | TVar x
 TypeDesc : Desc
@@ -48,17 +48,24 @@ liftType m' t = liftFix {TypeDesc} m' t
 liftType≤ : {m m' : ℕ} → (m≤m' : m ≤ m') → Type m → Type m'
 liftType≤ m≤m' t = liftFix≤ {TypeDesc} m≤m' t
 
-lem3 :  {m : ℕ} → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
-lem3 m≤m x = begin
-             (liftType≤ m≤m x)
+liftTypem≤m :  {m : ℕ} → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
+liftTypem≤m m≤m t = begin
+             (liftType≤ m≤m t)
              ≡⟨ refl ⟩
-               liftFix≤ {TypeDesc} m≤m x
+              (liftFix≤ {TypeDesc} m≤m t)
+             ≡⟨ refl ⟩
+                mvar-map-fin {TypeDesc} (λ x → inject≤ x m≤m) t
              ≡⟨ {!!} ⟩
-               x
+               {!!}
+             ≡⟨ {!!} ⟩
+               t
              ∎
 
 substType : {m m' : ℕ} → AListType m m' → Type m → Type m' 
 substType σ t = substFix {TypeDesc} σ t
+
+substTypeAnil : {m m' : ℕ} → (t : Type m) → substType anil t ≡ t
+substTypeAnil t = fold-id t
 
 substType≤ : {m m' m'' : ℕ} → AListType m'' m' → m ≤ m'' → Type m → Type m' 
 substType≤ σ m≤m'' t = substFix≤ {TypeDesc} σ m≤m'' t
@@ -93,6 +100,15 @@ substCxt≤ : {m m' m'' n : ℕ} → AListType m' m'' → (m≤m' : m ≤ m') �
             Cxt {m} n → Cxt {m''} n 
 substCxt≤ σ m≤m' Γ = Data.Vec.map (substType σ) (liftCxt≤ m≤m' Γ)
 
+lemx : {m : ℕ} → (x : Type m) → (m≤m : m ≤ m) → substType anil (liftType≤ m≤m x) ≡ x
+lemx x m≤m = begin
+              substType anil (liftType≤ m≤m x)
+             ≡⟨ cong (λ x₁ → substType anil x₁) (liftTypem≤m m≤m x) ⟩
+               substType anil x
+             ≡⟨ fold-id x ⟩
+               x
+             ∎
+             
 -- substCxt anil Γ は Γ と同じ
 substCxtAnil : {m n : ℕ} → (Γ : Cxt {m} n) → substCxt anil Γ ≡ Γ 
 substCxtAnil [] = refl
@@ -100,7 +116,7 @@ substCxtAnil (x ∷ Γ) = cong₂ _∷_ (M-id x) (substCxtAnil Γ)
 
 substCxt≤Anil : {m n : ℕ} → (Γ : Cxt {m} n) → (m≤m : m ≤ m) → substCxt≤ anil m≤m Γ ≡ Γ 
 substCxt≤Anil [] m≤m = refl
-substCxt≤Anil (x ∷ Γ) m≤m = cong₂ _∷_ {!!} (substCxt≤Anil Γ m≤m)
+substCxt≤Anil (x ∷ Γ) m≤m = cong₂ _∷_ (lemx x m≤m) (substCxt≤Anil Γ m≤m)
 
 -- 自由変数の数が n 個の well-socpe な項
 data WellScopedTerm (n : ℕ) : Set where
