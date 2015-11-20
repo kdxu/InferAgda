@@ -48,18 +48,9 @@ liftType m' t = liftFix {TypeDesc} m' t
 liftType≤ : {m m' : ℕ} → (m≤m' : m ≤ m') → Type m → Type m'
 liftType≤ m≤m' t = liftFix≤ {TypeDesc} m≤m' t
 
-liftTypem≤m :  {m : ℕ} → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
-liftTypem≤m m≤m t = begin
-             (liftType≤ m≤m t)
-             ≡⟨ refl ⟩
-              (liftFix≤ {TypeDesc} m≤m t)
-             ≡⟨ refl ⟩
-                mvar-map-fin {TypeDesc} (λ x → inject≤ x m≤m) t
-             ≡⟨ {!!} ⟩
-               {!!}
-             ≡⟨ {!!} ⟩
-               t
-             ∎
+liftTypem≤m :  (m : ℕ) → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
+liftTypem≤m zero z≤n x = {!!}
+liftTypem≤m (suc m) (s≤s m≤m) x = {!!}
 
 substType : {m m' : ℕ} → AListType m m' → Type m → Type m' 
 substType σ t = substFix {TypeDesc} σ t
@@ -101,9 +92,9 @@ substCxt≤ : {m m' m'' n : ℕ} → AListType m' m'' → (m≤m' : m ≤ m') �
 substCxt≤ σ m≤m' Γ = Data.Vec.map (substType σ) (liftCxt≤ m≤m' Γ)
 
 lemx : {m : ℕ} → (x : Type m) → (m≤m : m ≤ m) → substType anil (liftType≤ m≤m x) ≡ x
-lemx x m≤m = begin
+lemx {m} x m≤m = begin
               substType anil (liftType≤ m≤m x)
-             ≡⟨ cong (λ x₁ → substType anil x₁) (liftTypem≤m m≤m x) ⟩
+             ≡⟨ cong (λ x₁ → substType anil x₁) (liftTypem≤m m m≤m x) ⟩
                substType anil x
              ≡⟨ fold-id x ⟩
                x

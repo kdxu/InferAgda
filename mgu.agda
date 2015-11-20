@@ -174,12 +174,15 @@ liftFix {D} m' {m} t = mvar-map-fin (inject+' m') t
 liftFix≤ : {D : Desc} → {m m' : ℕ} → (m≤m' : m ≤ m') → Fix D m → Fix D m'
 liftFix≤ m≤m' t = mvar-map-fin (λ x → inject≤ x m≤m') t
 
-
+-- injectm≤m
+injectm≤m : {m : ℕ} → (x : Fin m) → (m≤m : m ≤ m) → inject≤ x m≤m ≡ x
+injectm≤m zero (s≤s m≤m) = refl
+injectm≤m (suc x) (s≤s m≤m) = cong suc (injectm≤m x m≤m)
 --  F : ⟦ D ⟧ (Fix D m) → Fix D m
 --  M : (x : Fin m) → Fix D m
 
-liftFixm≤m : {D : Desc} → {m  : ℕ} → {m≤m : m ≤ m} → (t : Fix D m) → liftFix≤ m≤m t ≡ t
-liftFixm≤m t = {!!}
+liftFixm≤m : {D : Desc} → {m  : ℕ} →(m≤m : m ≤ m) → (t : Fix D m) → liftFix≤ m≤m t ≡ t
+liftFixm≤m  m≤m t = cong (λ x → mvar-map-fin (λ x₁ → inject≤ x m≤m) {!t!}) (injectm≤m {!fromℕ!} m≤m)
 
 -- 全ての型変数に M を付け直すだけなら変化なし
 M-id : {D : Desc} → {m : ℕ} → (t : Fix D m) → mvar-map M t ≡ t
