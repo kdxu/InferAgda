@@ -95,6 +95,7 @@ ind : {D : Desc} → {m : ℕ} → (X : Fix D m → Set) →
 ind {D} P phi f (F x) = phi x (everywhere D P (ind P phi f) x)
 ind P phi f (M x) = f x
 
+{-
 fmap-fold : {D D' : Desc} → {m : ℕ} → 
        (d : ⟦ D ⟧ (Fix D' m)) →
        ⟦ D ⟧' (λ t → fold F M t ≡ t) d → fmap D (fold F M) d ≡ d
@@ -104,11 +105,42 @@ fmap-fold {D1 :+: D2} (inj₂ d) p = cong inj₂ (fmap-fold {D2} d p)
 fmap-fold {D1 :*: D2} (d1 , d2) (p1 , p2) =
   cong₂ _,_ (fmap-fold {D1} d1 p1) (fmap-fold {D2} d2 p2)
 fmap-fold {rec} d p = p
+-}
 
+-- 上記の fmap-fold の M を M' x ≡ M x である任意の M' でも大丈夫にしたもの
+-- （functional extensionality を避けるため）
+fmap-fold-ext : {D D' : Desc} → {m : ℕ} → 
+            {M' : Fin m → Fix D' m} → (∀ x → M' x ≡ M x) → 
+       (d : ⟦ D ⟧ (Fix D' m)) →
+       ⟦ D ⟧' (λ t → fold F M' t ≡ t) d → fmap D (fold F M') d ≡ d
+fmap-fold-ext {base} M'x≡Mx tt tt = refl
+fmap-fold-ext {D1 :+: D2} M'x≡Mx (inj₁ d) p = cong inj₁ (fmap-fold-ext {D1} M'x≡Mx d p)
+fmap-fold-ext {D1 :+: D2} M'x≡Mx (inj₂ d) p = cong inj₂ (fmap-fold-ext {D2} M'x≡Mx d p)
+fmap-fold-ext {D1 :*: D2} M'x≡Mx (d1 , d2) (p1 , p2) =
+  cong₂ _,_ (fmap-fold-ext {D1} M'x≡Mx d1 p1) (fmap-fold-ext {D2} M'x≡Mx d2 p2)
+fmap-fold-ext {rec} M'x≡Mx d p = p
+
+fmap-fold : {D D' : Desc} → {m : ℕ} → 
+       (d : ⟦ D ⟧ (Fix D' m)) →
+       ⟦ D ⟧' (λ t → fold F M t ≡ t) d → fmap D (fold F M) d ≡ d
+fmap-fold {D} d p = fmap-fold-ext {D} (λ y → refl) d p
+
+fold-id-ext : {D : Desc} → {m : ℕ} →
+          {M' : Fin m → Fix D m} → (∀ x → M' x ≡ M x) → 
+          (t : Fix D m) → fold F M' t ≡ t
+fold-id-ext {D} {m} {M'} M'x≡Mx =
+  ind (λ t → fold F M' t ≡ t)
+      (λ d x → cong F (fmap-fold-ext {D} M'x≡Mx d x))
+      (λ x → M'x≡Mx x)
+
+{-
 fold-id : {D : Desc} → {m : ℕ} → (t : Fix D m) → fold F M t ≡ t
 fold-id {D} = ind (λ t → fold F M t ≡ t)
                   (λ d x → cong F (fmap-fold {D} d x))
                   (λ x → refl)
+-}
+fold-id : {D : Desc} → {m : ℕ} → (t : Fix D m) → fold F M t ≡ t
+fold-id {D} = fold-id-ext {D} (λ y → refl)
 
 ---------------------------------------------------------------
 
@@ -174,15 +206,27 @@ liftFix {D} m' {m} t = mvar-map-fin (inject+' m') t
 liftFix≤ : {D : Desc} → {m m' : ℕ} → (m≤m' : m ≤ m') → Fix D m → Fix D m'
 liftFix≤ m≤m' t = mvar-map-fin (λ x → inject≤ x m≤m') t
 
--- injectm≤m
+-- injectm≤m x m≤m : x を m≤m で増やしても x のまま
 injectm≤m : {m : ℕ} → (x : Fin m) → (m≤m : m ≤ m) → inject≤ x m≤m ≡ x
 injectm≤m zero (s≤s m≤m) = refl
 injectm≤m (suc x) (s≤s m≤m) = cong suc (injectm≤m x m≤m)
---  F : ⟦ D ⟧ (Fix D m) → Fix D m
---  M : (x : Fin m) → Fix D m
 
-liftFixm≤m : {D : Desc} → {m  : ℕ} →(m≤m : m ≤ m) → (t : Fix D m) → liftFix≤ m≤m t ≡ t
-liftFixm≤m  m≤m t = cong (λ x → mvar-map-fin (λ x₁ → inject≤ x m≤m) {!t!}) (injectm≤m {!fromℕ!} m≤m)
+-- liftFixm≤m m≤m t : t を m≤m で増やしても t のまま
+liftFixm≤m : {D : Desc} → {m : ℕ} →(m≤m : m ≤ m) → (t : Fix D m) → liftFix≤ m≤m t ≡ t
+liftFixm≤m {D} {m} m≤m =
+  ind (λ t → liftFix≤ m≤m t ≡ t)
+      (λ d x → begin
+        liftFix≤ m≤m (F d) ≡⟨ refl ⟩
+        fold {D} F (M ∘ λ x → inject≤ x m≤m) (F d) ≡⟨ refl ⟩
+        F (fmap D (fold F (M ∘ λ z → inject≤ z m≤m)) d)
+          ≡⟨ cong F (fmap-fold-ext {D} (λ y → cong M (injectm≤m y m≤m)) d x) ⟩
+        F d ∎)
+      (λ x → begin
+        liftFix≤ m≤m (M x) ≡⟨ refl ⟩
+        fold {D} F (M ∘ λ x → inject≤ x m≤m) (M x) ≡⟨ refl ⟩
+        (M ∘ λ x → inject≤ x m≤m) x ≡⟨ refl ⟩
+        M (inject≤ x m≤m) ≡⟨ cong M (injectm≤m x m≤m) ⟩
+        M x ∎)
 
 -- 全ての型変数に M を付け直すだけなら変化なし
 M-id : {D : Desc} → {m : ℕ} → (t : Fix D m) → mvar-map M t ≡ t

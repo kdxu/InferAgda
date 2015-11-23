@@ -60,6 +60,7 @@ well-scoped term は、型レベルで `n` というパラメータを持つ ter
 
 #### definition
 
+```agda
 WellScopedTerm n :=  
   Var : Fin n → WellScopedTerm n  
   Lam : (s : WellScopedTerm (suc n))   WellScopedTerm n  
@@ -71,6 +72,7 @@ WellScopedTerm n :=
   Fst : WellScopedTerm n → WellScopedTerm n  
   Snd : WellScopedTerm n → WellScopedTerm n  
   Cons : WellScopedTerm n → WellScopedTerm n → WellScopedTerm n  
+```
 
 note:  `Fin n` 型は 0~n-1の自然数の有限集合をもつ型のことです。
 

@@ -49,8 +49,7 @@ liftType≤ : {m m' : ℕ} → (m≤m' : m ≤ m') → Type m → Type m'
 liftType≤ m≤m' t = liftFix≤ {TypeDesc} m≤m' t
 
 liftTypem≤m :  (m : ℕ) → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
-liftTypem≤m zero z≤n x = {!!}
-liftTypem≤m (suc m) (s≤s m≤m) x = {!!}
+liftTypem≤m m m≤m x = liftFixm≤m m≤m x
 
 substType : {m m' : ℕ} → AListType m m' → Type m → Type m' 
 substType σ t = substFix {TypeDesc} σ t
@@ -88,11 +87,11 @@ substCxt σ Γ = Data.Vec.map (substType σ) Γ
 
 -- substCxt≤ σ Γ : Γ を m' まで引き上げてから σ を適用した型環境を返す
 substCxt≤ : {m m' m'' n : ℕ} → AListType m' m'' → (m≤m' : m ≤ m') →
-            Cxt {m} n → Cxt {m''} n 
+            Cxt {m} n → Cxt {m''} n
 substCxt≤ σ m≤m' Γ = Data.Vec.map (substType σ) (liftCxt≤ m≤m' Γ)
 
-lemx : {m : ℕ} → (x : Type m) → (m≤m : m ≤ m) → substType anil (liftType≤ m≤m x) ≡ x
-lemx {m} x m≤m = begin
+substAnilm≤m : {m : ℕ} → (x : Type m) → (m≤m : m ≤ m) → substType anil (liftType≤ m≤m x) ≡ x
+substAnilm≤m {m} x m≤m = begin
               substType anil (liftType≤ m≤m x)
              ≡⟨ cong (λ x₁ → substType anil x₁) (liftTypem≤m m m≤m x) ⟩
                substType anil x
@@ -107,7 +106,7 @@ substCxtAnil (x ∷ Γ) = cong₂ _∷_ (M-id x) (substCxtAnil Γ)
 
 substCxt≤Anil : {m n : ℕ} → (Γ : Cxt {m} n) → (m≤m : m ≤ m) → substCxt≤ anil m≤m Γ ≡ Γ 
 substCxt≤Anil [] m≤m = refl
-substCxt≤Anil (x ∷ Γ) m≤m = cong₂ _∷_ (lemx x m≤m) (substCxt≤Anil Γ m≤m)
+substCxt≤Anil (x ∷ Γ) m≤m = cong₂ _∷_ (substAnilm≤m x m≤m) (substCxt≤Anil Γ m≤m)
 
 -- 自由変数の数が n 個の well-socpe な項
 data WellScopedTerm (n : ℕ) : Set where
