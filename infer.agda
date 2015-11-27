@@ -23,10 +23,10 @@ m≤m :  ∀ m →  m ≤ m
 m≤m zero = z≤n
 m≤m (suc m) = s≤s (m≤m m)
 
-sucm≤m'→m≤m' :  ∀ m m' → (suc m) ≤ m' → m ≤ m'
-sucm≤m'→m≤m' zero m' x = z≤n
-sucm≤m'→m≤m' (suc m) zero ()
-sucm≤m'→m≤m' (suc m) (suc m') (s≤s x) = s≤s (sucm≤m'→m≤m' m m' x)
+sucm≤m'→m≤m' :  ∀{ m m'} → (suc m) ≤ m' → m ≤ m'
+sucm≤m'→m≤m' {zero} {m'} x = z≤n
+sucm≤m'→m≤m' {suc m} {zero} ()
+sucm≤m'→m≤m' {suc m} {suc m'} (s≤s x) = s≤s (sucm≤m'→m≤m' {m} {m'} x)
 
 +-suc : ∀ m n → m + suc n ≡ suc (m + n)
 +-suc zero n = refl
@@ -56,10 +56,9 @@ infer m Γ (Lam s) | just  (m'' , m' , leq , σ , t , w)  = just (m'' , (m' , (�
     LamS = Lam (mvar-sub σ (inject≤ (fromℕ m) leq)) w'
      where
          leq' : m ≤ m''
-         leq'  = {!sucm≤m'→m≤m'!} -- trans (≤-step (refl′ refl))
-                 -- (trans leq (refl′ refl))
+         leq' = {!!}
          w' : WellTypedTerm (tx ∷ substCxt≤ σ leq' Γ) t
-         w' = subst (λ l → WellTypedTerm (tx ∷ l) t) eq w
+         w' = subst (λ l → WellTypedTerm (tx ∷ l) t) {!!} w
            where eq : {!!} ≡ substCxt≤ σ (≤⇒pred≤ (suc m) m'' leq) Γ
                  eq = {!!}
      
