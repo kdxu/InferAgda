@@ -1,7 +1,7 @@
 module infer where
 
 open import Data.Nat
-open import Data.Vec 
+open import Data.Vec
 open import Data.Product
 open import Data.Fin hiding (_+_; _≤_)
 open import Data.Maybe
@@ -34,11 +34,11 @@ sucm≤m'→m≤m' {suc m} {suc m'} (s≤s x) = s≤s (sucm≤m'→m≤m' {m} {m
 
 infer : (m : ℕ) → {n : ℕ} → (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
          Maybe (Σ[ m'' ∈ ℕ ]
-                Σ[ m' ∈ ℕ ] 
-                Σ[ m≤m'' ∈ m ≤ m'' ] 
-                Σ[ σ ∈ AListType m'' m' ] 
+                Σ[ m' ∈ ℕ ]
+                Σ[ m≤m'' ∈ m ≤ m'' ]
+                Σ[ σ ∈ AListType m'' m' ]
                 Σ[ τ ∈ Type m' ]
-                WellTypedTerm (substCxt≤ σ m≤m'' Γ) τ) 
+                WellTypedTerm (substCxt≤ σ m≤m'' Γ) τ)
 infer m Γ (Var x) = just (m , (m , ((n≤m+n 0 m) , (anil , ((lookup x
          Γ) , VarX)))))
    where
@@ -48,7 +48,7 @@ infer m Γ (Lam s) with infer (suc m) (TVar (fromℕ m) ∷ liftCxt 1 Γ)
          s
 infer m Γ (Lam s) | just  (m'' , m' , leq , σ , t , w)  = just (m'' , (m' , (≤⇒pred≤ (suc m) m'' leq , (σ , (tx ⇒ t , LamS)))))
   where
- 
+
     tx : Type m'
     tx = substType≤ σ leq (TVar (fromℕ m))
 
@@ -56,12 +56,12 @@ infer m Γ (Lam s) | just  (m'' , m' , leq , σ , t , w)  = just (m'' , (m' , (�
     LamS = Lam (mvar-sub σ (inject≤ (fromℕ m) leq)) w'
      where
          leq' : m ≤ m''
-         leq' = {!!}
+         leq' = {!   !}
          w' : WellTypedTerm (tx ∷ substCxt≤ σ leq' Γ) t
-         w' = subst (λ l → WellTypedTerm (tx ∷ l) t) {!!} w
-           where eq : {!!} ≡ substCxt≤ σ (≤⇒pred≤ (suc m) m'' leq) Γ
-                 eq = {!!}
-     
+         w' = subst (λ l → WellTypedTerm (tx ∷ l) t) eq w
+           where eq : {!   !} ≡ substCxt≤ σ leq' Γ
+                 eq = {!   !}
+
 
 infer m Γ (Lam s) | nothing = nothing
 infer m Γ (App s1 s2) with infer m Γ s1
@@ -87,16 +87,15 @@ infer m Γ (App s1 s2) | just (m'' , m' , leq , σ , t , w) | just (m1'' , m1' ,
     AppS1S2 : WellTypedTerm (substCxt≤ (σ2 +⟨ n≤m+n 1 m1' ⟩ (σ1 +⟨ leq1 ⟩ σ)) leq2 Γ) (substType σ2 (TVar (fromℕ m1')))
     AppS1S2 = App s1' s2'
             where
-              s1' : WellTypedTerm {!!} {!!}
-              s1' = {!!}
-              s2' : WellTypedTerm {!!} {!!}
-              s2' = {!!}
-           
-            
+              s1' : WellTypedTerm {!   !} {!   !}
+              s1' = {!   !}
+              s2' : WellTypedTerm {!   !} {!   !}
+              s2' = {!   !}
+
+
 
 infer m Γ (App s1 s2) | just (m'' , m' , leq , σ , t , w) | just (m1'' , m1' , leq1 , σ1 , t1 , w1) | nothing = nothing
 infer m Γ (App s1 s2) | nothing = nothing
-infer m Γ (Fst t) = {!!}
-infer m Γ (Snd t) = {!!}
-infer m Γ (Cons t1 t2) = {!!}
-
+infer m Γ (Fst t) = {!   !}
+infer m Γ (Snd t) = {!    !}
+infer m Γ (Cons t1 t2) = {!    !}

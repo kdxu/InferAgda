@@ -7,7 +7,7 @@
 
 ## TODO
 
-わけわからん inject の補題の証明
+App, Lam のところの証明
 
 ## PROGRESS
 
@@ -18,9 +18,3 @@
 wellscopedな型推論
 welltypedな型推論
 型をTypeDescで表現
-
-# 日報
-
-修論やばいのでつけることにした
-
-
