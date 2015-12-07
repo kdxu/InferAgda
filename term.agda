@@ -178,3 +178,39 @@ data WellTypedTerm {m n : ℕ} (Γ : Cxt n) : Type m → Set where
   Fst : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t1
   Snd : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t2
   Cons :  {t1 t2 : Type m} → WellTypedTerm Γ t1 → WellTypedTerm Γ t2 → WellTypedTerm Γ (t1 ∏ t2)  
+
+-- lookup と liftCxt は順番を変えても良い
+lookupLiftCxtCommute : (m' : ℕ) {n m : ℕ} (x : Fin n) (Γ : Cxt {m} n) →
+                       liftType m' (lookup x Γ) ≡ lookup x (liftCxt m' Γ)
+lookupLiftCxtCommute m' {zero} () Γ
+lookupLiftCxtCommute m' {suc n} zero (t ∷ Γ) = refl
+lookupLiftCxtCommute m' {suc n} (suc x) (t ∷ Γ) = lookupLiftCxtCommute m' x Γ
+
+-- WellTypedTerm を lift する
+liftWTerm : (k : ℕ) {m n : ℕ} → {Γ : Cxt {m} n} → {t : Type m} → WellTypedTerm Γ t →
+            WellTypedTerm (liftCxt k Γ) (liftType k t)
+liftWTerm k {Γ = Γ} (Var x) rewrite lookupLiftCxtCommute k x Γ = Var x
+liftWTerm k (Lam t w) = Lam (liftType k t) (liftWTerm k w)
+liftWTerm k (App w1 w2) = App (liftWTerm k w1) (liftWTerm k w2)
+liftWTerm k (Fst w) = Fst (liftWTerm k w)
+liftWTerm k (Snd w) = Snd (liftWTerm k w)
+liftWTerm k (Cons w1 w2) = Cons (liftWTerm k w1) (liftWTerm k w2)
+
+-- lookup と substCxt≤ は順番を変えても良い
+lookupSubst≤CxtCommute : {n m m' m'' : ℕ} (x : Fin n) (Γ : Cxt {m} n) → (σ : AListType m' m'') →
+                       (m≤m' : m ≤ m') →
+                       substType≤ σ m≤m' (lookup x Γ) ≡ lookup x (substCxt≤ σ m≤m' Γ)
+lookupSubst≤CxtCommute {zero} () Γ σ m≤m'
+lookupSubst≤CxtCommute {suc n} zero (t ∷ Γ) σ m≤m' = refl
+lookupSubst≤CxtCommute {suc n} (suc x) (t ∷ Γ) σ m≤m' = lookupSubst≤CxtCommute x Γ σ m≤m'
+
+-- substWTerm≤ σ w : w に σ を適用した WellTypedTerm を返す
+substWTerm≤ : {m m' m'' n : ℕ} → {Γ : Cxt {m} n} → {t : Type m} →
+             (σ : AListType m' m'') → (m≤m' : m ≤ m') → WellTypedTerm Γ t →
+             WellTypedTerm (substCxt≤ σ m≤m' Γ) (substType≤ σ m≤m' t)
+substWTerm≤ {Γ = Γ} σ m≤m' (Var x) rewrite lookupSubst≤CxtCommute x Γ σ m≤m' = Var x
+substWTerm≤ σ m≤m' (Lam t w) = Lam (substType≤ σ m≤m' t) (substWTerm≤ σ m≤m' w)
+substWTerm≤ σ m≤m' (App w1 w2) = App (substWTerm≤ σ m≤m' w1) (substWTerm≤ σ m≤m' w2)
+substWTerm≤ σ m≤m' (Fst w) = Fst (substWTerm≤ σ m≤m' w)
+substWTerm≤ σ m≤m' (Snd w) = Snd (substWTerm≤ σ m≤m' w)
+substWTerm≤ σ m≤m' (Cons w1 w2) = Cons (substWTerm≤ σ m≤m' w1) (substWTerm≤ σ m≤m' w2)
