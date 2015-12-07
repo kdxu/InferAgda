@@ -144,6 +144,7 @@ infer m Γ (Fst s)
 ... | just (m2 , σ2) =
     just (suc (suc m1) ∸ m1 + m1' , (m2 , (leq' , (σ' , ( τ , FstW)))))
     where
+
           leq' : m ≤ (suc (suc m1) ∸ m1) + m1'
           leq' =　start
                       m
@@ -154,14 +155,17 @@ infer m Γ (Fst s)
                     ≤⟨ m≤m'≡k'+m≤k+m zero (suc (suc m1) ∸ m1) m1' z≤n ⟩
                       (suc (suc m1) ∸ m1) + m1'
                   □
-          τ : Fix (base :+: rec :*: rec :+: rec :*: rec) m2
-          τ = substType σ2 (TVar (fromℕ (suc m1)))
+
+          τ : Type m2
+          τ = substType σ2 (liftType 1 (TVar (fromℕ m1)))
+          τ' : Type m2
+          τ' = substType σ2 (TVar (fromℕ (suc m1)))
           σ' : AListType (suc (suc m1) ∸ m1 + m1') m2
           σ' = σ2 +⟨ ≤-steps 2 (n≤m+n 0 m1) ⟩ σ
           w' : WellTypedTerm (substCxt≤ σ m≦m1' Γ) t1
           w' = w
-          W : WellTypedTerm (substCxt≤ σ' leq' Γ) {!   !}
-          W = {!   !}
+          W : WellTypedTerm (substCxt≤ σ' leq' Γ) (τ ∏ τ')
+          W = substWTerm≤ σ' leq' {! w  !}
           FstW : WellTypedTerm (substCxt≤ σ' leq' Γ) τ
           FstW = Fst W
 infer m Γ (Snd s) = {!   !}
