@@ -48,6 +48,52 @@ liftType m' t = liftFix {TypeDesc} m' t
 liftType≤ : {m m' : ℕ} → (m≤m' : m ≤ m') → Type m → Type m'
 liftType≤ m≤m' t = liftFix≤ {TypeDesc} m≤m' t
 
+inject≤zero : {m m' : ℕ} → (1+m≤1+m' : suc m ≤ suc m') → inject≤ (zero {n = m}) 1+m≤1+m' ≡ (zero {n = m'})
+inject≤zero (s≤s 1+m≤1+m') = refl
+
+inject≤add2 : {m m' : ℕ} → (k : ℕ) → (k+m≤m' : k + m ≤ m') → (m≤m' : m ≤ m') →
+        (x : Fin m) →
+        inject≤ (inject+'' k x) k+m≤m' ≡ inject≤ x m≤m'
+inject≤add2 {.(suc m)} {.(suc m')} k k+m≤m' (s≤s {m = m} {n = m'} m≤m') (zero {n = .m})
+  rewrite m+sucn≡sucm+n k m = inject≤zero k+m≤m'
+inject≤add2 {.(suc m)} {.(suc m')} k k+m≤m' (s≤s {m = m} {n = m'} m≤m') (suc x)
+  rewrite m+sucn≡sucm+n k m = eq k+m≤m' 
+  where eq : (k+m≤m' : suc (k + m) ≤ suc m') → inject≤ (suc (inject+'' k x)) k+m≤m' ≡ suc (inject≤ x m≤m')
+        eq (s≤s k+m≤m'') = cong suc (inject≤add2 k k+m≤m'' m≤m' x)
+
+inject≤add : {m m' : ℕ} → (k : ℕ) → (k+m≤m' : k + m ≤ m') → (m≤m' : m ≤ m') →
+        (x : Fin m) →
+        ((λ x → inject≤ x k+m≤m') ∘ inject+' k) x ≡ inject≤ x m≤m'
+inject≤add k k+m≤m' m≤m' x
+  rewrite inject+equal k x = inject≤add2 k k+m≤m' m≤m' x
+
+-- functional extensionality
+postulate
+  ext : forall {A B : Set} {f g : A -> B} -> (∀ (a : A) -> f a ≡ g a) -> f ≡ g
+
+inject≤add-ext : {m m' : ℕ} → (k : ℕ) → (k+m≤m' : k + m ≤ m') → (m≤m' : m ≤ m') →
+        (λ x → inject≤ x k+m≤m') ∘ (inject+' k) ≡ λ x → inject≤ x m≤m'
+inject≤add-ext k k+m≤m' m≤m' = ext (λ x → inject≤add k k+m≤m' m≤m' x)
+
+liftType≤add : {m m' : ℕ} → (k : ℕ) → (x : Type m) → (k+m≤m' : k + m ≤ m') → (m≤m' : m ≤ m') →
+        liftType≤ k+m≤m' (liftType k x) ≡ liftType≤ m≤m' x
+liftType≤add {m} {m'} k x k+m≤m' m≤m' = begin
+    liftType≤ k+m≤m' (liftType k x)
+  ≡⟨ refl ⟩
+    liftFix≤ {TypeDesc} k+m≤m' (liftFix {TypeDesc} k x)
+  ≡⟨ refl ⟩
+    mvar-map-fin (λ x → inject≤ x k+m≤m') (mvar-map-fin (inject+' k) x)
+  ≡⟨ mvar-map-fin-add (λ x → inject≤ x k+m≤m') (inject+' k) x ⟩
+    mvar-map-fin ((λ x → inject≤ x k+m≤m') ∘ (inject+' k)) x
+  ≡⟨ cong (λ f → mvar-map-fin f x) (inject≤add-ext k k+m≤m' m≤m') ⟩
+    mvar-map-fin (λ x → inject≤ x m≤m') x
+  ≡⟨ refl ⟩
+    liftFix≤ {TypeDesc} m≤m' x
+  ≡⟨ refl ⟩
+    liftType≤ m≤m' x
+  ∎
+ -- mvar-map-fin-add {_} {m} {k + m} {m'} {!!} {!!} {!x!}
+
 liftTypem≤m :  (m : ℕ) → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
 liftTypem≤m m m≤m x = liftFixm≤m m≤m x
 
@@ -80,6 +126,10 @@ liftCxtZero [] = refl
 liftCxtZero (t ∷ Γ) = cong₂ _∷_ (M-id t) (liftCxtZero Γ)
 
 --liftCxt≤Zero  : {m n : ℕ} → (Γ : Cxt {m} n) → (m≤m : m ≤ m) → liftCxt 0 Γ ≡ Γ
+
+-- 空の型環境は lift しても同じ
+liftCxtEmpty : (m' m : ℕ) → liftCxt m' {m} {0} [] ≡ []
+liftCxtEmpty m' m = refl
 
 -- substCxt σ Γ : Γ に σ を適用した型環境を返す
 substCxt : {m m' n : ℕ} → AListType m m' → Cxt {m} n → Cxt {m'} n 

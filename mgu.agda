@@ -192,11 +192,57 @@ mvar-map f t = fold F f t
 mvar-map-fin : {D : Desc} → {m m' : ℕ} → (f : Fin m → Fin m') → Fix D m → Fix D m'
 mvar-map-fin f = mvar-map (M ∘ f)
 
+-- 
+fmap-fold-M : {D D' : Desc} → {m m' m'' : ℕ} → 
+       (f : Fin m' → Fin m'') → (g : Fin m → Fin m') →
+       (d : ⟦ D ⟧ (Fix D' m)) →
+       ⟦ D ⟧' (λ t → fold {D'} {m'} {Fix D' m''} F (M ∘ f) (fold F (M ∘ g) t) ≡ fold F (M ∘ (f ∘ g)) t) d →
+       fmap D (fold {D'} {m'} {Fix D' m''} F (M ∘ f)) (fmap D (fold F (M ∘ g)) d) ≡ fmap D (fold F (M ∘ (f ∘ g))) d
+fmap-fold-M {base} f g tt tt = refl
+fmap-fold-M {D1 :+: D2} f g (inj₁ d) p = cong inj₁ (fmap-fold-M {D1} f g d p)
+fmap-fold-M {D1 :+: D2} f g (inj₂ d) p = cong inj₂ (fmap-fold-M {D2} f g d p)
+fmap-fold-M {D1 :*: D2} f g (d1 , d2) (p1 , p2) =
+  cong₂ _,_ (fmap-fold-M {D1} f g d1 p1) (fmap-fold-M {D2} f g d2 p2)
+fmap-fold-M {rec} f g d p = p
+
+-- 
+fold-add : {D : Desc} → {m m' m'' : ℕ} → (f : Fin m' → Fin m'') → (g : Fin m → Fin m') →
+        (t : Fix D m) → fold {D} {m'} {Fix D m''} F (M ∘ f) (fold {D} F (M ∘ g) t) ≡ fold F (M ∘ (f ∘ g)) t
+fold-add {D} {m} {m'} {m''} f g =
+  ind (λ t → fold {D} {m'} {Fix D m''} F (M ∘ f) (fold {D} F (M ∘ g) t) ≡ fold F (M ∘ (f ∘ g)) t)
+      (λ d x → cong F (fmap-fold-M {D} f g d x))
+      (λ x → refl)
+
+--
+mvar-map-fin-add : {D : Desc} → {m m' m'' : ℕ} → (f : Fin m' → Fin m'') → (g : Fin m → Fin m') →
+        (x : Fix D m) → mvar-map-fin f (mvar-map-fin g x) ≡ mvar-map-fin (f ∘ g) x
+mvar-map-fin-add f g t = fold-add f g t
+
 -- inject+' n x : x の型を n だけ持ち上げる
--- Fin の inject+ は結論部が Fin (m' + m)
+-- Fin の inject+ は結論部が Fin (m + m')
 inject+' : ∀ m' {m} → Fin m → Fin (m' + m)
 inject+' zero x = x
 inject+' (suc m) x = inject₁ (inject+' m x)
+
+m+sucn≡sucm+n : (m n : ℕ) → m + suc n ≡ suc (m + n)
+m+sucn≡sucm+n zero n = refl
+m+sucn≡sucm+n (suc m) n = cong suc (m+sucn≡sucm+n m n)
+
+inject+'' : ∀ m' {m} → Fin m → Fin (m' + m)
+inject+'' m' {.(suc m)} (zero {n = m}) rewrite m+sucn≡sucm+n m' m = zero {n = m' + m}
+inject+'' m' {.(suc m)} (suc {n = m} x) rewrite m+sucn≡sucm+n m' m = suc (inject+'' m' x)
+
+inject+''zero : ∀ {m} → (x : Fin m) → inject+'' zero x ≡ x
+inject+''zero zero = refl
+inject+''zero (suc x) = cong suc (inject+''zero x)
+
+inject+''suc : ∀ m' {m} → (x : Fin m) → inject+'' (suc m') x ≡ inject₁ (inject+'' m' x)
+inject+''suc m' {.(suc m)} (zero {n = m}) rewrite m+sucn≡sucm+n m' m = refl
+inject+''suc m' {.(suc m)} (suc {n = m} x) rewrite m+sucn≡sucm+n m' m = cong suc (inject+''suc m' x)
+
+inject+equal : ∀ m' {m} → (x : Fin m) → inject+' m' x ≡ inject+'' m' x
+inject+equal zero x = sym (inject+''zero x)
+inject+equal (suc m') x rewrite inject+''suc m' x = cong inject₁ (inject+equal m' x)
 
 -- liftFix m' t : t の中の型変数の数を m' だけ増やす
 liftFix : {D : Desc} → (m' : ℕ) → {m : ℕ} → Fix D m → Fix D (m' + m)

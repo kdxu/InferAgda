@@ -2,6 +2,7 @@ module infer where
 
 open import Data.Nat
 open import Data.Vec
+open import Data.Vec.Properties
 open import Data.Product
 open import Data.Fin hiding (_+_; _≤_)
 open import Data.Maybe
@@ -37,9 +38,13 @@ hcong₂' : ∀ {a b c d} {I J : Set a} {i1 i2 : I} {j1 j2 : J}
         (f : {i : I} → {j : J} → (x : A i) → (y : B j x) → C x y) → x ≅ y → u ≅ v → f x u ≅ f y v
 hcong₂' _ _ refl refl f hrefl hrefl = hrefl
 
-substCxt≤+1 : {m m' m''  n : ℕ} → (Γ : Cxt {m} n) → (leq : suc m ≤ m'') → (leq' : m ≤ m'') → (σ : AListType m'' m') → substCxt≤ σ leq (liftCxt 1 Γ) ≡ substCxt≤ σ leq' Γ
-substCxt≤+1 {m} {m'} {m''} {n} Γ leq leq' σ =  {!   !} -- ≅-to-≡ (hcong₂' (λ c → AList c m' m) (λ c → {!   !}) {!   !} {!   !} {! substCxt≤  !} {!   !} {!   !})
+-- liftType≤+k : {m m' : ℕ} → (k : ℕ) → (x : Type m) → (k+m≤m' : k + m ≤ m') → (m≤m' : m ≤ m') →
+--           liftType≤ k+m≤m' (liftType k x) ≡ liftType≤ m≤m' x
+-- liftType≤+k k x k+m≤m' m≤m' = {!refl!}
 
+substCxt≤+1 : {m m' m''  n : ℕ} → (Γ : Cxt {m} n) → (leq : suc m ≤ m'') → (leq' : m ≤ m'') → (σ : AListType m'' m') → substCxt≤ σ leq (liftCxt 1 Γ) ≡ substCxt≤ σ leq' Γ
+substCxt≤+1 [] leq leq' σ = refl
+substCxt≤+1 (x ∷ Γ) leq leq' σ = cong₂ _∷_ (cong (substType σ) (liftType≤add 1 x leq leq')) (substCxt≤+1 Γ leq leq' σ)
 
 infer : (m : ℕ) → {n : ℕ} → (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
          Maybe (Σ[ m'' ∈ ℕ ]
