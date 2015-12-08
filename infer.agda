@@ -138,7 +138,7 @@ infer m Γ (App s1 s2) | nothing = nothing
 infer m Γ (Fst s)
     with infer m Γ s
 ... | nothing = nothing
-... | just (m1' , m1 , m≦m1' , σ , t1 , w)
+... | just (m1' , m1 , m≤m1' , σ , t1 , w)
     with mgu  (liftType 2 t1)  (liftType 1 (TVar (fromℕ m1)) ∏ ((TVar (fromℕ (suc m1)))))
 ... | nothing = nothing
 ... | just (m2 , σ2) =
@@ -148,7 +148,7 @@ infer m Γ (Fst s)
           leq' : m ≤ (suc (suc m1) ∸ m1) + m1'
           leq' =　start
                       m
-                    ≤⟨ m≦m1' ⟩
+                    ≤⟨ m≤m1' ⟩
                       m1'
                     ≤⟨ ≡-to-≤ m1' m1' refl ⟩
                       zero + m1'
@@ -162,10 +162,12 @@ infer m Γ (Fst s)
           τ' = substType σ2 (TVar (fromℕ (suc m1)))
           σ' : AListType (suc (suc m1) ∸ m1 + m1') m2
           σ' = σ2 +⟨ ≤-steps 2 (n≤m+n 0 m1) ⟩ σ
-          w' : WellTypedTerm (substCxt≤ σ m≦m1' Γ) t1
+          w' : WellTypedTerm (substCxt≤ σ m≤m1' Γ) t1
           w' = w
+          w2 : WellTypedTerm (substCxt≤ σ2 (≤-step (≤-step (m≤m m1))) (substCxt≤ σ m≤m1' Γ)) (substType≤ σ2 (≤-step (≤-step (m≤m m1))) t1)
+          w2 = substWTerm≤ σ2 (≤-step (≤-step (m≤m m1))) w
           W : WellTypedTerm (substCxt≤ σ' leq' Γ) (τ ∏ τ')
-          W = substWTerm≤ σ' leq' {! w  !}
+          W = {!   !}
           FstW : WellTypedTerm (substCxt≤ σ' leq' Γ) τ
           FstW = Fst W
 infer m Γ (Snd s) = {!   !}
