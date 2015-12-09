@@ -3,5 +3,5 @@
 README
 -----
 
-[English](README.en.md "English")  
+<s>English</s>
 [Japanese](README.ja.md "Japanese")
