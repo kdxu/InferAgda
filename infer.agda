@@ -21,6 +21,8 @@ open import term
 
 --------------------------------------------------------------------------------
 
+
+
 m≤m :  ∀ m →  m ≤ m
 m≤m zero = z≤n
 m≤m (suc m) = s≤s (m≤m m)
@@ -38,10 +40,6 @@ m≤m'≡k'+m≤k+m .0 zero m z≤n = m≤m m
 m≤m'≡k'+m≤k+m zero (suc k') m leq = ≤-step (≤-steps k' (m≤m m))
 m≤m'≡k'+m≤k+m (suc k) (suc k') m (s≤s leq) = s≤s (m≤m'≡k'+m≤k+m k k' m leq)
 
-lemma : ∀ m1 → (suc (suc m1)) ∸ m1 ≡ suc (suc (m1 ∸ m1))
-lemma zero = refl
-lemma (suc m1) = cong (λ x → x) (lemma m1)
-
 m≤m'≡k+m≤k'+m' :  ∀ k k'  m m' →  m ≤ m' → k ≤ k' →  (k + m ≤ k' + m')
 m≤m'≡k+m≤k'+m' k k' m m' leq leq2  =
           start
@@ -52,23 +50,43 @@ m≤m'≡k+m≤k'+m' k k' m m' leq leq2  =
             k' + m'
            □
 
+≤-trans : ∀{m j k} →  (m≤j : m ≤ j) →  (j≤k : j ≤ k) → (m ≤ k)
+≤-trans z≤n j≤k = z≤n
+≤-trans (s≤s m≤j) (s≤s j≤k) = s≤s (≤-trans m≤j j≤k)
+
 ≡-to-≤ : ∀ m m' → m ≡ m' → m ≤ m'
 ≡-to-≤ zero .0 refl = z≤n
 ≡-to-≤ (suc m) zero ()
 ≡-to-≤ (suc m) (suc .m) refl = s≤s (≡-to-≤ m m refl)
 
-hcong₂' : ∀ {a b c d} {I J : Set a} {i1 i2 : I} {j1 j2 : J}
-          (A : I → Set b)
-          (B : {i : I} → (j : J) → A i → Set c)
-          {C : {i : I} → (x : A i) → {j : J} → B j x → Set d}
-          {x : A i1} {y : A i2} {u : B j1 x} {v : B j2 y} →
-        i1 ≡ i2 → j1 ≡ j2 →
-        (f : {i : I} → {j : J} → (x : A i) → (y : B j x) → C x y) → x ≅ y → u ≅ v → f x u ≅ f y v
-hcong₂' _ _ refl refl f hrefl hrefl = hrefl
+lemma : ∀ m1 → (suc (suc m1)) ∸ m1 ≡ suc (suc (m1 ∸ m1))
+lemma zero = refl
+lemma (suc m1) = cong (λ x → x) (lemma m1)
 
--- liftType≤+k : {m m' : ℕ} → (k : ℕ) → (x : Type m) → (k+m≤m' : k + m ≤ m') → (m≤m' : m ≤ m') →
---           liftType≤ k+m≤m' (liftType k x) ≡ liftType≤ m≤m' x
--- liftType≤+k k x k+m≤m' m≤m' = {!refl!}
+
+substTypeTrans : ∀ {m n m1 m1' m2 m2'}
+                    → (x : Type m)
+                    → (σ1 : AListType m1' m1)
+                    → (σ2 : AListType m2'  m2)
+                    → (σ' : AListType (m2' ∸ m1 + m1')  m2)
+                    → (leq1 : m ≤ m1')
+                    → (leq2 : m1 ≤ m2')
+                    →  (leq' : m ≤ m2' ∸ m1 + m1')
+                    → ( σ' ≡ σ2 +⟨ leq2 ⟩ σ1 )
+                    → substType≤ σ' leq' x ≡ substType≤ σ2 leq2 (substType≤ σ1 leq1 x)
+substTypeTrans x σ1 σ2 σ' leq1 leq2 leq' eq = ?
+
+substCxtTrans : ∀ {m n m1 m1' m2 m2'}
+                    → (Γ : Cxt {m} n)
+                    → (σ1 : AListType m1' m1)
+                    → (σ2 : AListType m2'  m2)
+                    → (σ' : AListType (m2' ∸ m1 + m1')  m2)
+                    → (leq1 : m ≤ m1') → (leq2 : m1 ≤ m2')
+                    →  (leq' : m ≤ m2' ∸ m1 + m1')
+                    → ( σ' ≡ σ2 +⟨ leq2 ⟩ σ1 )
+                    → (substCxt≤ σ' leq' Γ) ≡ (substCxt≤ σ2 leq2 (substCxt≤ σ1 leq1 Γ))
+substCxtTrans [] σ1 σ2 σ' leq1 leq2 leq' eq = refl
+substCxtTrans (x ∷ Γ) σ1 σ2 σ' leq1 leq2 leq' eq = cong₂ _∷_ (substTypeTrans x σ1 σ2 σ' leq1 leq2 leq' eq) (substCxtTrans Γ σ1 σ2 σ' leq1 leq2 leq' eq)
 
 substCxt≤+1 : {m m' m''  n : ℕ} → (Γ : Cxt {m} n) → (leq : suc m ≤ m'') → (leq' : m ≤ m'') → (σ : AListType m'' m') → substCxt≤ σ leq (liftCxt 1 Γ) ≡ substCxt≤ σ leq' Γ
 substCxt≤+1 [] leq leq' σ = refl
@@ -144,7 +162,6 @@ infer m Γ (Fst s)
 ... | just (m2 , σ2) =
     just (suc (suc m1) ∸ m1 + m1' , (m2 , (leq' , (σ' , ( τ , FstW)))))
     where
-
           leq' : m ≤ (suc (suc m1) ∸ m1) + m1'
           leq' =　start
                       m
@@ -156,18 +173,32 @@ infer m Γ (Fst s)
                       (suc (suc m1) ∸ m1) + m1'
                   □
 
+          m1≤m1+2 : (m1 ≤ suc (suc m1))
+          m1≤m1+2 = ≤-steps 2 (m≤m {!   !})
+
           τ : Type m2
           τ = substType σ2 (liftType 1 (TVar (fromℕ m1)))
           τ' : Type m2
           τ' = substType σ2 (TVar (fromℕ (suc m1)))
           σ' : AListType (suc (suc m1) ∸ m1 + m1') m2
-          σ' = σ2 +⟨ ≤-steps 2 (n≤m+n 0 m1) ⟩ σ
+          σ' = σ2 +⟨ m1≤m1+2 ⟩ σ
           w' : WellTypedTerm (substCxt≤ σ m≤m1' Γ) t1
           w' = w
-          w2 : WellTypedTerm (substCxt≤ σ2 (≤-step (≤-step (m≤m m1))) (substCxt≤ σ m≤m1' Γ)) (substType≤ σ2 (≤-step (≤-step (m≤m m1))) t1)
-          w2 = substWTerm≤ σ2 (≤-step (≤-step (m≤m m1))) w
+-- leq' : m ≤ (suc (suc m1) ∸ m1) + m1'
+-- m1≤m1+2 : (m1 ≤ suc (suc m1))
+-- m≤m1' : m ≤ m1'
+          Γ1≡Γ2 : (substCxt≤ σ' leq' Γ) ≡ (substCxt≤ σ2 m1≤m1+2 (substCxt≤ σ m≤m1' Γ))
+          Γ1≡Γ2 = substCxtTrans Γ σ σ2 σ' m≤m1' m1≤m1+2 leq' refl
+
+          τ1≡τ2 : (τ ∏ τ') ≡ (substType≤ σ2 m1≤m1+2 t1)
+          τ1≡τ2 = {!   !}
+
+          w2 : WellTypedTerm (substCxt≤ σ2 m1≤m1+2 (substCxt≤ σ m≤m1' Γ)) (substType≤ σ2 m1≤m1+2 t1)
+          w2 = substWTerm≤ σ2 m1≤m1+2 w
+
           W : WellTypedTerm (substCxt≤ σ' leq' Γ) (τ ∏ τ')
-          W = {!   !}
+          W rewrite τ1≡τ2 | Γ1≡Γ2 = w2
+
           FstW : WellTypedTerm (substCxt≤ σ' leq' Γ) τ
           FstW = Fst W
 infer m Γ (Snd s) = {!   !}

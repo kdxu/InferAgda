@@ -11,11 +11,11 @@ open import Data.Fin hiding (_+_; _≤_)
 open ≤-Reasoning renaming (begin_ to start_; _∎ to _□; _≡⟨_⟩_ to ≡⟪_⟫_)
 open import Data.Product
 open import Data.Sum
-open import Data.Vec 
+open import Data.Vec
 open import Data.Maybe
 open import Relation.Binary hiding (_⇒_)
 open import Function using (_∘_)
- -- for DecTotalOrder.trans 
+ -- for DecTotalOrder.trans
 open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
 
@@ -57,7 +57,7 @@ inject≤add2 : {m m' : ℕ} → (k : ℕ) → (k+m≤m' : k + m ≤ m') → (m�
 inject≤add2 {.(suc m)} {.(suc m')} k k+m≤m' (s≤s {m = m} {n = m'} m≤m') (zero {n = .m})
   rewrite m+sucn≡sucm+n k m = inject≤zero k+m≤m'
 inject≤add2 {.(suc m)} {.(suc m')} k k+m≤m' (s≤s {m = m} {n = m'} m≤m') (suc x)
-  rewrite m+sucn≡sucm+n k m = eq k+m≤m' 
+  rewrite m+sucn≡sucm+n k m = eq k+m≤m'
   where eq : (k+m≤m' : suc (k + m) ≤ suc m') → inject≤ (suc (inject+'' k x)) k+m≤m' ≡ suc (inject≤ x m≤m')
         eq (s≤s k+m≤m'') = cong suc (inject≤add2 k k+m≤m'' m≤m' x)
 
@@ -97,13 +97,13 @@ liftType≤add {m} {m'} k x k+m≤m' m≤m' = begin
 liftTypem≤m :  (m : ℕ) → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
 liftTypem≤m m m≤m x = liftFixm≤m m≤m x
 
-substType : {m m' : ℕ} → AListType m m' → Type m → Type m' 
+substType : {m m' : ℕ} → AListType m m' → Type m → Type m'
 substType σ t = substFix {TypeDesc} σ t
 
 substTypeAnil : {m m' : ℕ} → (t : Type m) → substType anil t ≡ t
 substTypeAnil t = fold-id t
 
-substType≤ : {m m' m'' : ℕ} → AListType m'' m' → m ≤ m'' → Type m → Type m' 
+substType≤ : {m m' m'' : ℕ} → AListType m'' m' → m ≤ m'' → Type m → Type m'
 substType≤ σ m≤m'' t = substFix≤ {TypeDesc} σ m≤m'' t
 
 -- 型環境 (Γ : Cxt {m} n) 関係
@@ -132,8 +132,8 @@ liftCxtEmpty : (m' m : ℕ) → liftCxt m' {m} {0} [] ≡ []
 liftCxtEmpty m' m = refl
 
 -- substCxt σ Γ : Γ に σ を適用した型環境を返す
-substCxt : {m m' n : ℕ} → AListType m m' → Cxt {m} n → Cxt {m'} n 
-substCxt σ Γ = Data.Vec.map (substType σ) Γ 
+substCxt : {m m' n : ℕ} → AListType m m' → Cxt {m} n → Cxt {m'} n
+substCxt σ Γ = Data.Vec.map (substType σ) Γ
 
 -- substCxt≤ σ Γ : Γ を m' まで引き上げてから σ を適用した型環境を返す
 substCxt≤ : {m m' m'' n : ℕ} → AListType m' m'' → (m≤m' : m ≤ m') →
@@ -148,13 +148,13 @@ substAnilm≤m {m} x m≤m = begin
              ≡⟨ fold-id x ⟩
                x
              ∎
-             
+
 -- substCxt anil Γ は Γ と同じ
-substCxtAnil : {m n : ℕ} → (Γ : Cxt {m} n) → substCxt anil Γ ≡ Γ 
+substCxtAnil : {m n : ℕ} → (Γ : Cxt {m} n) → substCxt anil Γ ≡ Γ
 substCxtAnil [] = refl
 substCxtAnil (x ∷ Γ) = cong₂ _∷_ (M-id x) (substCxtAnil Γ)
 
-substCxt≤Anil : {m n : ℕ} → (Γ : Cxt {m} n) → (m≤m : m ≤ m) → substCxt≤ anil m≤m Γ ≡ Γ 
+substCxt≤Anil : {m n : ℕ} → (Γ : Cxt {m} n) → (m≤m : m ≤ m) → substCxt≤ anil m≤m Γ ≡ Γ
 substCxt≤Anil [] m≤m = refl
 substCxt≤Anil (x ∷ Γ) m≤m = cong₂ _∷_ (substAnilm≤m x m≤m) (substCxt≤Anil Γ m≤m)
 
@@ -177,7 +177,7 @@ data WellTypedTerm {m n : ℕ} (Γ : Cxt n) : Type m → Set where
         WellTypedTerm Γ t'
   Fst : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t1
   Snd : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t2
-  Cons :  {t1 t2 : Type m} → WellTypedTerm Γ t1 → WellTypedTerm Γ t2 → WellTypedTerm Γ (t1 ∏ t2)  
+  Cons :  {t1 t2 : Type m} → WellTypedTerm Γ t1 → WellTypedTerm Γ t2 → WellTypedTerm Γ (t1 ∏ t2)
 
 -- lookup と liftCxt は順番を変えても良い
 lookupLiftCxtCommute : (m' : ℕ) {n m : ℕ} (x : Fin n) (Γ : Cxt {m} n) →
