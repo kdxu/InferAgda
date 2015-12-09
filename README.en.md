@@ -35,7 +35,7 @@ structures
 ## term.agda
 
 this module represents simple well-scoped term and well-typed term of
- this type-inference system.
+ type-inference system.
 
 ### well-scoped term
 
@@ -56,7 +56,7 @@ WellScopedTerm n :=
   Snd : WellScopedTerm n → WellScopedTerm n
   Cons : WellScopedTerm n → WellScopedTerm n → WellScopedTerm n
 
-note: the type `Fin n` explains 'finite set', has a finite set of 0 ~ n-1.
+note: the type `Fin n` is 'finite set', has a finite set of 0 ~ n-1.
 
 
 ### well-typed term
@@ -76,7 +76,7 @@ WellTypedTerm (Γ : Cxt n)  (t : Type m) :=
   Snd : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t2
   Cons :  {t1 t2 : Type m} → WellTypedTerm Γ t1 → WellTypedTerm Γ t2 → WellTypedTerm Γ (t1 ∏ t2)  
 
-the type `Type` is discribed in the module mgu.
+the type `Type` is discribed in the module `mgu`.
 
 ## mgu.agda
 
