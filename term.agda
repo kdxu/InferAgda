@@ -1,3 +1,5 @@
+\agdaIgnore{
+\begin{code}
 module term where
 
 open import mgu
@@ -125,8 +127,6 @@ liftCxtZero : {m n : ℕ} → (Γ : Cxt {m} n) → liftCxt 0 Γ ≡ Γ
 liftCxtZero [] = refl
 liftCxtZero (t ∷ Γ) = cong₂ _∷_ (M-id t) (liftCxtZero Γ)
 
---liftCxt≤Zero  : {m n : ℕ} → (Γ : Cxt {m} n) → (m≤m : m ≤ m) → liftCxt 0 Γ ≡ Γ
-
 -- 空の型環境は lift しても同じ
 liftCxtEmpty : (m' m : ℕ) → liftCxt m' {m} {0} [] ≡ []
 liftCxtEmpty m' m = refl
@@ -214,3 +214,5 @@ substWTerm≤ σ m≤m' (App w1 w2) = App (substWTerm≤ σ m≤m' w1) (substWTe
 substWTerm≤ σ m≤m' (Fst w) = Fst (substWTerm≤ σ m≤m' w)
 substWTerm≤ σ m≤m' (Snd w) = Snd (substWTerm≤ σ m≤m' w)
 substWTerm≤ σ m≤m' (Cons w1 w2) = Cons (substWTerm≤ σ m≤m' w1) (substWTerm≤ σ m≤m' w2)
+\end{code}
+}

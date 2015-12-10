@@ -8,20 +8,18 @@ open import Data.Fin hiding (_+_; _≤_)
 open import Data.Maybe
 open import Data.Sum
 open import Relation.Binary.PropositionalEquality
-open Relation.Binary.PropositionalEquality.≡-Reasoning
+open Relation.Binary.PropositionalEquality.≡-Reasoning renaming (_≡⟨_⟩_ to _≡⟪_⟫_ )
 open import Data.Nat.Properties
 open import Algebra.Structures
 open import Relation.Binary hiding (_⇒_)
 private module M = IsCommutativeSemiring
-open ≤-Reasoning renaming (begin_ to start_; _∎ to _□)
+open ≤-Reasoning renaming (begin_ to start_; _∎ to _□ )
 open import Relation.Binary.HeterogeneousEquality
   renaming (sym to hsym; trans to htrans; cong to hcong; cong₂ to hcong₂; subst to hsubst; subst₂ to hsubst₂; refl to hrefl)
 open import mgu
 open import term
 
 --------------------------------------------------------------------------------
-
-
 
 m≤m :  ∀ m →  m ≤ m
 m≤m zero = z≤n
@@ -74,7 +72,17 @@ substTypeTrans : ∀ {m n m1 m1' m2 m2'}
                     →  (leq' : m ≤ m2' ∸ m1 + m1')
                     → ( σ' ≡ σ2 +⟨ leq2 ⟩ σ1 )
                     → substType≤ σ' leq' x ≡ substType≤ σ2 leq2 (substType≤ σ1 leq1 x)
-substTypeTrans x σ1 σ2 σ' leq1 leq2 leq' eq = ?
+substTypeTrans t σ1 σ2 σ' leq1 leq2 leq' eq =
+      begin
+        substType≤ σ' leq' t
+      ≡⟪ cong (λ x₁ → mvar-map (mvar-sub x₁) (mvar-map-fin (λ x → inject≤ x leq') t)) eq ⟫
+        mvar-map (mvar-sub (σ2 +⟨ leq2 ⟩ σ1)) (mvar-map-fin (λ x → inject≤ x leq') t)
+      ≡⟪ sym {!   !} ⟫
+        mvar-map (mvar-sub σ2) (mvar-map-fin (λ x → inject≤ x leq2) (mvar-map (mvar-sub σ1) (mvar-map-fin (λ x → inject≤ x leq1) t)))
+      ≡⟪ refl ⟫
+        substType≤ σ2 leq2 (substType≤ σ1 leq1 t)
+      ∎
+
 
 substCxtTrans : ∀ {m n m1 m1' m2 m2'}
                     → (Γ : Cxt {m} n)
@@ -86,9 +94,14 @@ substCxtTrans : ∀ {m n m1 m1' m2 m2'}
                     → ( σ' ≡ σ2 +⟨ leq2 ⟩ σ1 )
                     → (substCxt≤ σ' leq' Γ) ≡ (substCxt≤ σ2 leq2 (substCxt≤ σ1 leq1 Γ))
 substCxtTrans [] σ1 σ2 σ' leq1 leq2 leq' eq = refl
-substCxtTrans (x ∷ Γ) σ1 σ2 σ' leq1 leq2 leq' eq = cong₂ _∷_ (substTypeTrans x σ1 σ2 σ' leq1 leq2 leq' eq) (substCxtTrans Γ σ1 σ2 σ' leq1 leq2 leq' eq)
+substCxtTrans (x ∷ Γ) σ1 σ2 σ' leq1 leq2 leq' eq =
+          cong₂ _∷_ (substTypeTrans x σ1 σ2 σ' leq1 leq2 leq' eq) (substCxtTrans Γ σ1 σ2 σ' leq1 leq2 leq' eq)
 
-substCxt≤+1 : {m m' m''  n : ℕ} → (Γ : Cxt {m} n) → (leq : suc m ≤ m'') → (leq' : m ≤ m'') → (σ : AListType m'' m') → substCxt≤ σ leq (liftCxt 1 Γ) ≡ substCxt≤ σ leq' Γ
+substCxt≤+1 : {m m' m''  n : ℕ} → (Γ : Cxt {m} n)
+                → (leq : suc m ≤ m'')
+                → (leq' : m ≤ m'')
+                → (σ : AListType m'' m')
+                → substCxt≤ σ leq (liftCxt 1 Γ) ≡ substCxt≤ σ leq' Γ
 substCxt≤+1 [] leq leq' σ = refl
 substCxt≤+1 (x ∷ Γ) leq leq' σ = cong₂ _∷_ (cong (substType σ) (liftType≤add 1 x leq leq')) (substCxt≤+1 Γ leq leq' σ)
 

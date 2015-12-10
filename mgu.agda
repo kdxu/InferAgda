@@ -44,7 +44,7 @@ infix 5 ⟦_⟧
 ⟦ d1 :*: d2 ⟧' P (x1 , x2) = ⟦ d1 ⟧' P x1 × ⟦ d2 ⟧' P x2
 ⟦ rec       ⟧' P x = P x
 
-everywhere : (D : Desc) → {R : Set} → (P : R → Set) → ((x : R) → P x) → 
+everywhere : (D : Desc) → {R : Set} → (P : R → Set) → ((x : R) → P x) →
              (d : ⟦ D ⟧ R) → ⟦ D ⟧' P d
 everywhere base P f tt = tt
 everywhere (D1 :+: D2) P f (inj₁ x) = everywhere D1 P f x
@@ -96,7 +96,7 @@ ind {D} P phi f (F x) = phi x (everywhere D P (ind P phi f) x)
 ind P phi f (M x) = f x
 
 {-
-fmap-fold : {D D' : Desc} → {m : ℕ} → 
+fmap-fold : {D D' : Desc} → {m : ℕ} →
        (d : ⟦ D ⟧ (Fix D' m)) →
        ⟦ D ⟧' (λ t → fold F M t ≡ t) d → fmap D (fold F M) d ≡ d
 fmap-fold {base} tt tt = refl
@@ -109,8 +109,8 @@ fmap-fold {rec} d p = p
 
 -- 上記の fmap-fold の M を M' x ≡ M x である任意の M' でも大丈夫にしたもの
 -- （functional extensionality を避けるため）
-fmap-fold-ext : {D D' : Desc} → {m : ℕ} → 
-            {M' : Fin m → Fix D' m} → (∀ x → M' x ≡ M x) → 
+fmap-fold-ext : {D D' : Desc} → {m : ℕ} →
+            {M' : Fin m → Fix D' m} → (∀ x → M' x ≡ M x) →
        (d : ⟦ D ⟧ (Fix D' m)) →
        ⟦ D ⟧' (λ t → fold F M' t ≡ t) d → fmap D (fold F M') d ≡ d
 fmap-fold-ext {base} M'x≡Mx tt tt = refl
@@ -120,13 +120,13 @@ fmap-fold-ext {D1 :*: D2} M'x≡Mx (d1 , d2) (p1 , p2) =
   cong₂ _,_ (fmap-fold-ext {D1} M'x≡Mx d1 p1) (fmap-fold-ext {D2} M'x≡Mx d2 p2)
 fmap-fold-ext {rec} M'x≡Mx d p = p
 
-fmap-fold : {D D' : Desc} → {m : ℕ} → 
+fmap-fold : {D D' : Desc} → {m : ℕ} →
        (d : ⟦ D ⟧ (Fix D' m)) →
        ⟦ D ⟧' (λ t → fold F M t ≡ t) d → fmap D (fold F M) d ≡ d
 fmap-fold {D} d p = fmap-fold-ext {D} (λ y → refl) d p
 
 fold-id-ext : {D : Desc} → {m : ℕ} →
-          {M' : Fin m → Fix D m} → (∀ x → M' x ≡ M x) → 
+          {M' : Fin m → Fix D m} → (∀ x → M' x ≡ M x) →
           (t : Fix D m) → fold F M' t ≡ t
 fold-id-ext {D} {m} {M'} M'x≡Mx =
   ind (λ t → fold F M' t ≡ t)
@@ -192,8 +192,8 @@ mvar-map f t = fold F f t
 mvar-map-fin : {D : Desc} → {m m' : ℕ} → (f : Fin m → Fin m') → Fix D m → Fix D m'
 mvar-map-fin f = mvar-map (M ∘ f)
 
--- 
-fmap-fold-M : {D D' : Desc} → {m m' m'' : ℕ} → 
+--
+fmap-fold-M : {D D' : Desc} → {m m' m'' : ℕ} →
        (f : Fin m' → Fin m'') → (g : Fin m → Fin m') →
        (d : ⟦ D ⟧ (Fix D' m)) →
        ⟦ D ⟧' (λ t → fold {D'} {m'} {Fix D' m''} F (M ∘ f) (fold F (M ∘ g) t) ≡ fold F (M ∘ (f ∘ g)) t) d →
@@ -205,14 +205,13 @@ fmap-fold-M {D1 :*: D2} f g (d1 , d2) (p1 , p2) =
   cong₂ _,_ (fmap-fold-M {D1} f g d1 p1) (fmap-fold-M {D2} f g d2 p2)
 fmap-fold-M {rec} f g d p = p
 
--- 
+--
 fold-add : {D : Desc} → {m m' m'' : ℕ} → (f : Fin m' → Fin m'') → (g : Fin m → Fin m') →
         (t : Fix D m) → fold {D} {m'} {Fix D m''} F (M ∘ f) (fold {D} F (M ∘ g) t) ≡ fold F (M ∘ (f ∘ g)) t
 fold-add {D} {m} {m'} {m''} f g =
   ind (λ t → fold {D} {m'} {Fix D m''} F (M ∘ f) (fold {D} F (M ∘ g) t) ≡ fold F (M ∘ (f ∘ g)) t)
       (λ d x → cong F (fmap-fold-M {D} f g d x))
       (λ x → refl)
-
 --
 mvar-map-fin-add : {D : Desc} → {m m' m'' : ℕ} → (f : Fin m' → Fin m'') → (g : Fin m → Fin m') →
         (x : Fix D m) → mvar-map-fin f (mvar-map-fin g x) ≡ mvar-map-fin (f ∘ g) x
@@ -332,7 +331,7 @@ check {D} {m} x t = fold (check-F x)
 
 {-
 checkInvArrow : ∀ {n : ℕ} (x : Fin (suc n)) (t1 t2 : Type (suc n)) {t' : Type n} →
-                check x (t1 ⇒ t2) ≡ just t' → 
+                check x (t1 ⇒ t2) ≡ just t' →
                 Σ[ t1' ∈ Type n ] Σ[ t2' ∈ Type n ]
                 (t' ≡ t1' ⇒ t2') × (check x t1 ≡ just t1') × (check x t2 ≡ just t2')
 checkInvArrow x t1 t2 eq with check x t1 | check x t2
@@ -342,10 +341,10 @@ checkInvArrow x t1 t2 () | nothing | just t2'
 checkInvArrow x t1 t2 () | nothing | nothing
 
 checkInvVar : ∀ {n : ℕ} (x y : Fin (suc n)) {t' : Type n} →
-                check x (TVar y) ≡ just t' → 
-                Σ[ y' ∈ Fin n ] 
-                (t' ≡ TVar y') × (thick x y ≡ just y') 
-checkInvVar x y eq with thick x y 
+                check x (TVar y) ≡ just t' →
+                Σ[ y' ∈ Fin n ]
+                (t' ≡ TVar y') × (thick x y ≡ just y')
+checkInvVar x y eq with thick x y
 checkInvVar x y refl | just x₁ = x₁ , (refl , refl)
 checkInvVar x y () | nothing
 -}
@@ -408,7 +407,7 @@ mvar-sub anil = M
 mvar-sub (σ asnoc t' / x) = mvar-map (mvar-sub σ) ∘ (t' for x)
 
 -- substFix σ t : t に σ を適用した型を返す
-substFix : {D : Desc} → {m m' : ℕ} → AList D m m' → Fix D m → Fix D m' 
+substFix : {D : Desc} → {m m' : ℕ} → AList D m m' → Fix D m → Fix D m'
 substFix σ t = mvar-map (mvar-sub σ) t
 
 -- substFix≤ σ m≤m' t : t の中の型変数の数を m から m'' に増やしてからσをかける
@@ -416,10 +415,10 @@ substFix≤ : {D : Desc} → {m m' m'' : ℕ} → AList D m'' m' →
             (m≤m'' : m ≤ m'') → Fix D m → Fix D m'
 substFix≤ σ m≤m'' t = mvar-map (mvar-sub σ) (liftFix≤ m≤m'' t)
 
--- 型変数 x と y を unify する代入を返す 
+-- 型変数 x と y を unify する代入を返す
 flexFlex : {D : Desc} → {m : ℕ} → (x y : Fin m) → Σ[ m' ∈ ℕ ] AList D m m'
 flexFlex {D} {zero} () y
-flexFlex {D} {suc m} x y with thick x y 
+flexFlex {D} {suc m} x y with thick x y
 ... | nothing = (suc m , anil) -- x = y だった。代入の必要なし
 ... | just y' = (m , anil asnoc (M y') / x) -- M y' for x を返す
 
@@ -543,7 +542,7 @@ _extends_ {m} (n' , σ') (n , σ) =
 σextendsNil : ∀ {m} (σ : Σ[ n ∈ ℕ ] AList m n) → σ extends (m , anil)
 σextendsNil σ s t eq rewrite TVarId s | TVarId t = cong (substType (proj₂ σ)) eq
 
--- 型変数 x と y を unify する代入を返す 
+-- 型変数 x と y を unify する代入を返す
 flexFlex2 : {m : ℕ} → (x y : Fin m) → (Σ[ n ∈ ℕ ] Σ[ σ ∈ AList m n ]
                                          substType σ (TVar x) ≡ substType σ (TVar y))
 flexFlex2 {zero} () y
@@ -568,14 +567,14 @@ flexRigidLem x TInt p with check x TInt | inspect (check x) TInt
 flexRigidLem x TInt p | just (TVar x₁) | [ () ]
 flexRigidLem x TInt refl | just TInt | [ refl ] rewrite thickxx≡nothing x = refl
 flexRigidLem x TInt p | just (x₁ ⇒ x₂) | [ () ]
-flexRigidLem x TInt () | nothing | [ eq ] 
+flexRigidLem x TInt () | nothing | [ eq ]
 flexRigidLem x (t ⇒ t₁) p with check x (t ⇒ t₁)  | inspect (check x) (t ⇒ t₁)
 flexRigidLem x (t ⇒ t₁) refl | just (TVar x₁) | [ eq ] with checkInvArrow x t t₁ eq
 ... | (t1' , t2' , () , b , c)
 flexRigidLem x (t ⇒ t₁) p | just TInt | [ eq ] with checkInvArrow x t t₁ eq
 ... | (t1' , t2' , () , b , c)
 flexRigidLem x (t ⇒ t₁) refl | just (x₁ ⇒ x₂) | [ eq ] with checkInvArrow x t t₁ eq
-flexRigidLem {t'' = t''} x (t ⇒ t₁) refl | just (x₁ ⇒ x₂) | [ eq ] | .x₁ , .x₂ , refl , b , c rewrite thickxx≡nothing x = 
+flexRigidLem {t'' = t''} x (t ⇒ t₁) refl | just (x₁ ⇒ x₂) | [ eq ] | .x₁ , .x₂ , refl , b , c rewrite thickxx≡nothing x =
   cong₂ _⇒_ p q -- (flexRigidLem  t' t b) {!!}
   where p : TVar ◃ x₁ ≡ (λ y → TVar ◃ (t'' for x) y) ◃ t
         p = begin
@@ -619,7 +618,7 @@ substTypeForCommute σ r z (s1 ⇒ s2) =
 substTypeForEq1 : ∀ {m n} (σ : AList m n) (r : Type m) (z : Fin (suc m)) (s t : Type (suc m)) →
                   substType (σ asnoc r / z) s ≡ substType (σ asnoc r / z) t →
                   substType σ ((r for z) ◃ s) ≡ substType σ ((r for z) ◃ t)
-substTypeForEq1 σ r z s t eq = 
+substTypeForEq1 σ r z s t eq =
   begin
     substType σ ((r for z) ◃ s)
   ≡⟨ sym (substTypeForCommute σ r z s)  ⟩
@@ -633,7 +632,7 @@ substTypeForEq1 σ r z s t eq =
 substTypeForEq2 : ∀ {m n} (σ : AList m n) (r : Type m) (z : Fin (suc m)) (s t : Type (suc m)) →
                   substType σ ((r for z) ◃ s) ≡ substType σ ((r for z) ◃ t) →
                   substType (σ asnoc r / z) s ≡ substType (σ asnoc r / z) t
-substTypeForEq2 σ r z s t eq = 
+substTypeForEq2 σ r z s t eq =
   begin
     substType (σ asnoc r / z) s
   ≡⟨ substTypeForCommute σ r z s ⟩
