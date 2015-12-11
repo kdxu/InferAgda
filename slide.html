@@ -3,14 +3,16 @@
   <head>
     <title>中間発表スライド</title>
     <meta charset="utf-8">
+
     <style>
+
       @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
       @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
       @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
 
-      body { font-family: 'Hiragino Kaku Gothic Pro W2'; }
+      body { font-family: 'Hiragino Kaku Gothic Pro'; }
       h1, h2, h3 {
-        font-family: 'Monaco';
+        font-family: 'Hiragino Maru Gothic Pro';
         font-weight: normal;
       }
       .remark-code, .remark-inline-code { font-family: 'Monaco'; }
@@ -18,10 +20,11 @@
   </head>
   <body>
     <textarea id="source">
-
       class: center, middle
 
-      # Agdaによる正当性が証明された型推論器の改良と拡張
+      ### Agdaによる正当性が証明された
+      ### 型推論器の改良と拡張
+
       =========
 
       2015.12.11
@@ -31,7 +34,7 @@
       ---
       # この研究は
 
-      Agdaによる*正当性が保証された*型推論器を実装している
+      Agdaによる正当性が保証された型推論器を実装している
 
       ---
       # キーワード
@@ -67,12 +70,12 @@
       - Agda で書けば停止性と正当性が示された型推論器がエレガントに実装できるのでは、という話
 
       ---
-      # 停止性
+      ## 停止性
 
       - プログラムが有限の計算回数で止まることが保証されていること
 
       ---
-      # 正当性
+      ## 正当性
 
       ![infer](./images/infer.png)
 
@@ -122,10 +125,11 @@
 
       - 具体的には、 `n` 個の「具体化されていない型変数」を `Fin n` 型の数字で表現し，その `n` を減らすことで停止性が明らかな形の unification を実現している
 
+      ---
       ![unify](./images/unify.png)
 
       ---
-      # syntax と型定義
+      ## syntax と型定義
 
       ### well-scoped term
 
@@ -133,27 +137,25 @@
 
       - この`n` は、 term の中の自由変数の数
 
-      ---
       #### definition
 
-      ```haskell
-      WellScopedTerm n :=
+      ```agda
+      data WellScopedTerm (n : ℕ) : Set where
         Var : Fin n → WellScopedTerm n
-        Lam : (s : WellScopedTerm (suc n))   WellScopedTerm n
-        App : (s1 : WellScopedTerm n)   (s2 : WellScopedTerm n)   WellScopedTerm n
-        Fst : WellScopedTerm n   WellScopedTerm n
-        Snd : WellScopedTerm n   WellScopedTerm n
-        Cons : WellScopedTerm n   WellScopedTerm n   WellScopedTerm nm (suc n)) → WellScopedTerm n
-        App : (s1 : WellScopedTerm n) → (s2 : WellScopedTerm n) → WellScopedTerm n
+        Lam : (s : WellScopedTerm (suc n)) → WellScopedTerm n
+        App : (s1 : WellScopedTerm n)
+            → (s2 : WellScopedTerm n) → WellScopedTerm n
         Fst : WellScopedTerm n → WellScopedTerm n
         Snd : WellScopedTerm n → WellScopedTerm n
         Cons : WellScopedTerm n → WellScopedTerm n → WellScopedTerm n
+
       ```
 
        - `Fin n` 型は 0~n-1の自然数の有限集合をもつ型のこと
 
       差分 : `Fst`, `Snd`, `Cons` が増えた
 
+      ---
       ### well-typed term
 
       型環境`Γ`と型`t`を（また型レベルの）パラメータとして持ち歩く term
@@ -161,20 +163,23 @@
       #### definition
 
       ```agda
-      WellTypedTerm (Γ : Cxt n)  (t : Type m) :=
+      -- WellTypedTerm Γ t : 自由変数の数が n 個、型が t であるような well-typed な項
+      data WellTypedTerm {m n : ℕ} (Γ : Cxt n) : Type m → Set where
         Var : (x : Fin n) → WellTypedTerm Γ (lookup x Γ)
-        Lam : (t : Type m) → {t' : Type m} → WellTypedTerm (t ∷ Γ) t' →
-              WellTypedTerm Γ (t ⇒ t')
-        App : {t t' : Type m} → WellTypedTerm Γ (t ⇒ t') → WellTypedTerm Γ t →
-              WellTypedTerm Γ t'
-        Fst : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t1
-        Snd : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t2
-        Cons :  {t1 t2 : Type m} → WellTypedTerm Γ t1 → WellTypedTerm Γ t2 → WellTypedTerm Γ (t1 ∏ t2)
+        Lam : (t : Type m) → {t' : Type m}
+            → WellTypedTerm (t ∷ Γ) t' → WellTypedTerm Γ (t ⇒ t')
+        App : {t t' : Type m} → WellTypedTerm Γ (t ⇒ t')
+              → WellTypedTerm Γ t → WellTypedTerm Γ t'
+        Fst : {t1 t2 : Type m}
+              → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t1
+        Snd : {t1 t2 : Type m}
+              → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t2
+        Cons :  {t1 t2 : Type m} → WellTypedTerm Γ t1
+              → WellTypedTerm Γ t2 → WellTypedTerm Γ (t1 ∏ t2)
       ```
-
       差分 : `Fst`, `Snd`, `Cons` が増えた
 
-
+      ---
       ### 型定義
 
       - `Type` を定義するにあたり `Desc` 型 と `Fix` 型を用いた(new!)
@@ -194,6 +199,7 @@
         M : (x : Fin m) → Fix D m
       ```
 
+      ---
       たとえば、
       ```ocaml
       t = TNat | t ⇒ t | TVar x
@@ -218,10 +224,9 @@
 
       `:*:` 連結
 
-      `TVar x`   <=> `rec :*: rec`
+      `TVar x`   <=> `rec :*: rec` のような形式で記述できる
 
-      のような形式で記述できる
-
+      ---
 
       #### こうすることのメリット
 
@@ -237,10 +242,10 @@
       ```
       のようにコンストラクタ単位で型を書いていたので、ここを変えると全部変えないといけなくて大変
 
-      これからはそんな心配をしなくても済むように
+      これからはそんな心配をしなくても済むように...
 
-      :innocent:
 
+      ---
 
       ### 代入の型
 
@@ -256,15 +261,32 @@
       AListType m m' = AList TypeDesc m m'
       ```
 
-      型推論器の実装
-      -----
+      ---
+
+      # 型推論器の実装
 
       - 型推論のアルゴリズムとして W-algorithm を採用
 
       #### 新しい関数定義
 
       ```agda
-      infer : (m : ℕ) → {n : ℕ} → (Γ : Cxt {m} n) → (s : WellScopedTerm n) →
+      infer : (m : ℕ) → {n : ℕ}
+                → (Γ : Cxt {m} n)
+                → (s : WellScopedTerm n) →
+               Maybe (Σ[ m'' ∈ ℕ ]
+                      Σ[ m' ∈ ℕ ]
+                      Σ[ m≤m'' ∈ m ≤ m'' ]
+                      Σ[ σ ∈ AListType m'' m' ]
+                      Σ[ τ ∈ Type m' ]
+                      WellTypedTerm (substCxt≤ σ m≤m'' Γ) τ)
+      ```
+
+      ---
+
+      ```agda
+      infer : (m : ℕ) → {n : ℕ}
+                → (Γ : Cxt {m} n)
+                → (s : WellScopedTerm n) →
                Maybe (Σ[ m'' ∈ ℕ ]
                       Σ[ m' ∈ ℕ ]
                       Σ[ m≤m'' ∈ m ≤ m'' ]
@@ -275,11 +297,12 @@
 
       - `m` 個の型変数をもつ `WellScopedTerm s` を渡すと、
       - ある `m'` と `m''` (ここで`m ≤ m''`) と
-      - 型変数の数を `m'` から `m''` にする代入 `σ` と
+      - 型変数の数を `m''` から `m'` にする代入 `σ` と
       - 型`τ`と
       - `WellTypedTerm` が返ってくる
 
 
+      ---
       #### なぜ不等式を導入したか
 
       - 以前は、型変数の数をきっちり管理していた
@@ -288,29 +311,40 @@
 
       - 型推論するにあたって正確な型変数の数は常に必要ではないのでは？
 
-      - `σ : AListType m n`は`m` 個の型変数を持つ型を `n` 個の型変数を持つ型にする代入
+      - `σ : AListType m'' m'`は `m''` 個の型変数を持つ型を `m'` 個の型変数を持つ型にする代入
+
+      - 制約は `m ≤ m''` で十分
+
+      ---
 
       ### 実装本体
-
 
       #### Variable
 
       変数の場合は単に型環境の中の型を返す
 
       ```agda
-      infer m Γ (Var x) = just (m , (m , ((n≤m+n 0 m) , (anil , ((lookup x Γ) , VarX)))))
-         where
-           VarX : WellTypedTerm (substCxt≤ anil (n≤m+n 0 m) Γ) (lookup x Γ)
-           VarX rewrite substCxt≤Anil Γ (n≤m+n 0 m) = Var x
+      infer m Γ (Var x) =
+            just (m , (m , ((n≤m+n 0 m) , (anil , ((lookup x Γ) , VarX)))))
+              where
+                VarX : WellTypedTerm (substCxt≤ anil (n≤m+n 0 m) Γ) (lookup x Γ)
+                VarX rewrite substCxt≤Anil Γ (n≤m+n 0 m) = Var x
       ```
+
+      ---
+
+      ### 実装本体
 
       #### Lambda
 
       - Lambda の場合はまず body 部分の型推論を行う
-      - body 部分には　`m` 番目の新たな変数が型環境に加わる (`TVar (fromℕ m) ∷ liftCxt 1 Γ)`)
+      - body 部分には　`m` 番目の新たな変数が型環境に加わる
+      - e.g `TVar (fromℕ m) ∷ liftCxt 1 Γ)`
       - body 部分に型が付いたら「引数の型⇒body の型」が全体の型
       - 引数の型変数は body を型推論中に具体化されているかも知れないので
       代入を施している
+
+      ---
 
       ```agda
       infer m Γ (Lam s) with infer (suc m) (TVar (fromℕ m) ∷ liftCxt 1 Γ)
@@ -335,11 +369,17 @@
       infer m Γ (Lam s) | nothing = nothing
       ```
 
+      ---
+      ### 実装本体
+
       #### Application
       - `App s1 s2` の型推論はまず `s1` と `s2` の型推論を行い，
       次に `s1` の型が「`s2 の型⇒β`」の形になっていることを
       確認する(unification)
       - ここで正しく unify することが示された `unify` 関数が必要になるので、今それを書こうとしてる
+      - この `unify` 関数は`Fst`, `Snd` , `Cons` でも必要になる
+
+      ---
 
       進捗状況
       ----
