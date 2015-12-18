@@ -1,5 +1,3 @@
-\agdaIgnore{
-\begin{code}
 module term where
 
 open import mgu
@@ -214,5 +212,3 @@ substWTerm≤ σ m≤m' (App w1 w2) = App (substWTerm≤ σ m≤m' w1) (substWTe
 substWTerm≤ σ m≤m' (Fst w) = Fst (substWTerm≤ σ m≤m' w)
 substWTerm≤ σ m≤m' (Snd w) = Snd (substWTerm≤ σ m≤m' w)
 substWTerm≤ σ m≤m' (Cons w1 w2) = Cons (substWTerm≤ σ m≤m' w1) (substWTerm≤ σ m≤m' w2)
-\end{code}
-}
