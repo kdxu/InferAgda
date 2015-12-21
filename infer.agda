@@ -11,6 +11,7 @@ open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning renaming (_≡⟨_⟩_ to _≡⟪_⟫_ )
 open import Data.Nat.Properties
 open import Algebra.Structures
+open import Function using (_∘_)
 open import Relation.Binary hiding (_⇒_)
 private module M = IsCommutativeSemiring
 open ≤-Reasoning renaming (begin_ to start_; _∎ to _□ )
@@ -21,49 +22,8 @@ open import term
 
 --------------------------------------------------------------------------------
 
-m≤m :  ∀ m →  m ≤ m
-m≤m zero = z≤n
-m≤m (suc m) = s≤s (m≤m m)
-
-m≤m' :  ∀ m m' →  m ≤ m' →  m ≤ suc m'
-m≤m' zero m' x = z≤n
-m≤m' (suc m) ._ (s≤s x) = s≤s (m≤m' m _ x)
-
-m≤m'≡k+m≤k+m' :  ∀ k m m' →  m ≤ m' → k + m ≤ k + m'
-m≤m'≡k+m≤k+m' zero m m' x = x
-m≤m'≡k+m≤k+m' (suc k) m m' x = s≤s (m≤m'≡k+m≤k+m' k m m' x)
-
-m≤m'≡k'+m≤k+m :  ∀ k k' m →  k ≤ k' → k + m ≤ k' + m
-m≤m'≡k'+m≤k+m .0 zero m z≤n = m≤m m
-m≤m'≡k'+m≤k+m zero (suc k') m leq = ≤-step (≤-steps k' (m≤m m))
-m≤m'≡k'+m≤k+m (suc k) (suc k') m (s≤s leq) = s≤s (m≤m'≡k'+m≤k+m k k' m leq)
-
-m≤m'≡k+m≤k'+m' :  ∀ k k'  m m' →  m ≤ m' → k ≤ k' →  (k + m ≤ k' + m')
-m≤m'≡k+m≤k'+m' k k' m m' leq leq2  =
-          start
-            k + m
-          ≤⟨ m≤m'≡k+m≤k+m' k m m' leq ⟩
-            k + m'
-          ≤⟨ m≤m'≡k'+m≤k+m k k' m' leq2 ⟩
-            k' + m'
-           □
-
-≤-trans : ∀{m j k} →  (m≤j : m ≤ j) →  (j≤k : j ≤ k) → (m ≤ k)
-≤-trans z≤n j≤k = z≤n
-≤-trans (s≤s m≤j) (s≤s j≤k) = s≤s (≤-trans m≤j j≤k)
-
-≡-to-≤ : ∀ m m' → m ≡ m' → m ≤ m'
-≡-to-≤ zero .0 refl = z≤n
-≡-to-≤ (suc m) zero ()
-≡-to-≤ (suc m) (suc .m) refl = s≤s (≡-to-≤ m m refl)
-
-lemma : ∀ m1 → (suc (suc m1)) ∸ m1 ≡ suc (suc (m1 ∸ m1))
-lemma zero = refl
-lemma (suc m1) = cong (λ x → x) (lemma m1)
-
 substType≤n : {m m' n : ℕ} → (σ :  AListType (n + m) m') → (leq :  m ≤ (n + m)) → (t : Type m) → substType σ (liftType n t) ≡ substType≤ σ leq t
-substType≤n {n = zero} σ leq t = {! leq  !}
-substType≤n {n = zero} σ (s≤s leq) t = ?
+substType≤n σ leq t = {!   !}
 
 substTypeTrans : ∀ {m n m1 m1' m2 m2'}
                     → (x : Type m)
@@ -211,7 +171,7 @@ infer m Γ (Fst s)
           τ1≡τ2 = sym
                 (begin
                   substType≤ σ2 m1≤2+m1 t1
-                ≡⟪ sym (substType≤n σ2 m1≤2+m1 t1) ⟫
+                ≡⟪ cong (λ x → mvar-map (mvar-sub σ2) (mvar-map (M ∘ x) t1)) (ext (λ a → inject≤≡+ a (suc (suc zero)) (≤-step (≤-step (m≤m m1))))) ⟫
                   substType σ2 (liftType 2 t1)
                 ≡⟪ eq2 ⟫
                   substType σ2 (liftType 1 (TVar (fromℕ m1))) ∏ substType σ2 (TVar (fromℕ (suc m1)))

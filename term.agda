@@ -54,26 +54,6 @@ liftType≤ m≤m' t = liftFix≤ {TypeDesc} m≤m' t
 liftTypem≤m :  (m : ℕ) → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
 liftTypem≤m m m≤m x = liftFixm≤m m≤m x
 
-
-liftType≤n : {m : ℕ} → (n : ℕ) → (leq : m ≤ n + m) → (t : Type m) → liftType≤ leq t ≡ liftType n t
-liftType≤n {m} zero leq t =
-   begin
-    liftType≤ leq t
-   ≡⟨ liftTypem≤m m leq t ⟩
-    t
-   ≡⟨ sym (liftTypeZero t) ⟩
-    liftType zero t
-   ∎
-
-liftType≤n (suc n) leq t =
-   begin
-    liftType≤ leq t
-   ≡⟨ {!   !} ⟩
-     {!   !}
-   ≡⟨ {!   !} ⟩
-    liftType (suc n) t
-   ∎
-
 inject≤zero : {m m' : ℕ} → (1+m≤1+m' : suc m ≤ suc m') → inject≤ (zero {n = m}) 1+m≤1+m' ≡ (zero {n = m'})
 inject≤zero (s≤s 1+m≤1+m') = refl
 
@@ -130,26 +110,6 @@ substTypeAnil t = fold-id t
 
 substType≤ : {m m' m'' : ℕ} → AListType m'' m' → m ≤ m'' → Type m → Type m'
 substType≤ σ m≤m'' t = substFix≤ {TypeDesc} σ m≤m'' t
-
-substType≤1 : {m m' : ℕ} → (σ : AListType (1 + m) m') → (leq :  m ≤ (1 + m)) → (t : Type m) → substType σ (liftType 1 t) ≡ substType≤ σ leq t
-substType≤1 anil leq t =
-  begin
-    substType anil (liftType 1 t)
-  ≡⟨ substTypeAnil (liftType 1 t) ⟩
-    liftType 1 t
-  ≡⟨ {!   !} ⟩
-    substType≤ anil leq t
-  ∎
-substType≤1 (σ asnoc t' / x) leq t = {!   !}
-{-  begin
-    substType σ (liftType 1 t)
-  ≡⟨ {!   !} ⟩
-    substType≤ σ leq t
-  ∎
-  -}
-
-substType≤n : {m m' n : ℕ} → (σ : AListType (n + m) m') → (leq :  m ≤ (n + m)) → (t : Type m) → substType σ (liftType n t) ≡ substType≤ σ leq t
-substType≤n σ leq t = {!   !}
 
 -- 型環境 (Γ : Cxt {m} n) 関係
 
