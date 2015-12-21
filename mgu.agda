@@ -66,8 +66,6 @@ lemma (suc m1) = cong (λ x → x) (lemma m1)
 +-suc zero    n = refl
 +-suc (suc m) n = cong suc (+-suc m n)
 
-
-
 ---------------------------------------------------------------
 
 infixl 6 _:+:_
@@ -336,8 +334,8 @@ liftFixZero {D} {m} t = sym (mvar-map-fin-id t)
 liftFix≤ : {D : Desc} → {m m' : ℕ} → (m≤m' : m ≤ m') → Fix D m → Fix D m'
 liftFix≤ m≤m' t = mvar-map-fin (λ x → inject≤ x m≤m') t
 
-inject≤-refl : ∀ {m n} (i : Fin n) (n≤n : n ≤ n) → inject≤ i n≤n ≡ i
-inject≤-refl zero (s≤s leq) = refl
+inject≤-refl : ∀ {n} (i : Fin n) (n≤n : n ≤ n) → inject≤ i n≤n ≡ i
+inject≤-refl zero    (s≤s _  ) = refl
 inject≤-refl (suc i) (s≤s n≤n) = cong suc (inject≤-refl i n≤n)
 
 -- n 持ち上げるのは≤も+もおなじ

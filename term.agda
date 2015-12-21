@@ -68,7 +68,7 @@ liftType≤n {m} zero leq t =
 liftType≤n (suc n) leq t =
    begin
     liftType≤ leq t
-   ≡⟨ {!    !} ⟩
+   ≡⟨ {!   !} ⟩
      {!   !}
    ≡⟨ {!   !} ⟩
     liftType (suc n) t
