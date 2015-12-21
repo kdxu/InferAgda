@@ -348,7 +348,10 @@ inject≤≡1 (suc x) n (s≤s leq) = cong suc (inject≤≡1 x n leq)
 
 inject≤Trans :  {m n l : ℕ} → (x : Fin m) → (leq : n ≤ l) → (leq' : m ≤ n) → (leq'' : m ≤ l)
     → inject≤ x leq'' ≡ inject≤  (inject≤ x leq') leq
-inject≤Trans x leq leq' leq'' = {!   !}
+inject≤Trans zero z≤n () leq''
+inject≤Trans zero (s≤s leq) (s≤s leq') (s≤s leq'') = refl
+inject≤Trans (suc x) z≤n () leq''
+inject≤Trans (suc x) (s≤s leq) (s≤s leq') (s≤s leq'') = cong suc (inject≤Trans x leq leq' leq'')
 
 inject≤≡+ : {m : ℕ} → (x : Fin m) → (n : ℕ) → (leq : m ≤ n + m) → inject≤ x leq ≡ inject+' n x
 inject≤≡+ x zero leq = inject≤-refl x leq
@@ -357,17 +360,15 @@ inject≤≡+ {m} x (suc n₁) leq =
     inject≤ x leq
   ≡⟨ inject≤Trans x leq1 leq2 leq ⟩
     inject≤ (inject≤ x leq2) leq1
-  ≡⟨ {! inject≤≡1  !} ⟩
-    inject₁ (inject≤ x leq3)
-  ≡⟨ cong (λ x₁ → inject₁ x₁) (inject≤≡+ x n₁ leq3) ⟩
+  ≡⟨ inject≤≡1 (inject≤ x leq2) n₁ leq1 ⟩
+    inject₁ (inject≤ x leq2)
+  ≡⟨ cong (λ x₁ → inject₁ x₁) (inject≤≡+ x n₁ leq2) ⟩
     inject₁ (inject+' n₁ x)
   ∎
-  where leq1 : suc m ≤ (suc n₁ + m)
-        leq1 = ≤-steps ? {!    !}
-        leq2 : m ≤ suc m
-        leq2 = {!   !}
-        leq3 : m ≤ n₁ + m
-        leq3 = ≤-steps n₁ (m≤m m)
+  where leq1 : n₁ + m  ≤ (suc n₁ + m)
+        leq1 = ≤-step (m≤m (n₁ + m))
+        leq2 : m ≤ n₁ + m
+        leq2 = ≤-steps n₁ (m≤m m)
 
 -- injectm≤m x m≤m : x を m≤m で増やしても x のまま
 injectm≤m : {m : ℕ} → (x : Fin m) → (m≤m : m ≤ m) → inject≤ x m≤m ≡ x
