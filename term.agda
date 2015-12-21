@@ -45,8 +45,34 @@ AListType m m' = AList TypeDesc m m'
 liftType : (m' : ℕ) → {m : ℕ} → Type m → Type (m' + m)
 liftType m' t = liftFix {TypeDesc} m' t
 
+liftTypeZero : {m : ℕ} → (x : Type m) → (liftType zero x) ≡ x
+liftTypeZero x = sym (liftFixZero x)
+
 liftType≤ : {m m' : ℕ} → (m≤m' : m ≤ m') → Type m → Type m'
 liftType≤ m≤m' t = liftFix≤ {TypeDesc} m≤m' t
+
+liftTypem≤m :  (m : ℕ) → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
+liftTypem≤m m m≤m x = liftFixm≤m m≤m x
+
+
+liftType≤n : {m : ℕ} → (n : ℕ) → (leq : m ≤ n + m) → (t : Type m) → liftType≤ leq t ≡ liftType n t
+liftType≤n {m} zero leq t =
+   begin
+    liftType≤ leq t
+   ≡⟨ liftTypem≤m m leq t ⟩
+    t
+   ≡⟨ sym (liftTypeZero t) ⟩
+    liftType zero t
+   ∎
+
+liftType≤n (suc n) leq t =
+   begin
+    liftType≤ leq t
+   ≡⟨ {!    !} ⟩
+     {!   !}
+   ≡⟨ {!   !} ⟩
+    liftType (suc n) t
+   ∎
 
 inject≤zero : {m m' : ℕ} → (1+m≤1+m' : suc m ≤ suc m') → inject≤ (zero {n = m}) 1+m≤1+m' ≡ (zero {n = m'})
 inject≤zero (s≤s 1+m≤1+m') = refl
@@ -94,8 +120,7 @@ liftType≤add {m} {m'} k x k+m≤m' m≤m' = begin
   ∎
  -- mvar-map-fin-add {_} {m} {k + m} {m'} {!!} {!!} {!x!}
 
-liftTypem≤m :  (m : ℕ) → (m≤m : m ≤ m) →  (x : Type m) → (liftType≤ m≤m x) ≡ x
-liftTypem≤m m m≤m x = liftFixm≤m m≤m x
+
 
 substType : {m m' : ℕ} → AListType m m' → Type m → Type m'
 substType σ t = substFix {TypeDesc} σ t
@@ -105,6 +130,26 @@ substTypeAnil t = fold-id t
 
 substType≤ : {m m' m'' : ℕ} → AListType m'' m' → m ≤ m'' → Type m → Type m'
 substType≤ σ m≤m'' t = substFix≤ {TypeDesc} σ m≤m'' t
+
+substType≤1 : {m m' : ℕ} → (σ : AListType (1 + m) m') → (leq :  m ≤ (1 + m)) → (t : Type m) → substType σ (liftType 1 t) ≡ substType≤ σ leq t
+substType≤1 anil leq t =
+  begin
+    substType anil (liftType 1 t)
+  ≡⟨ substTypeAnil (liftType 1 t) ⟩
+    liftType 1 t
+  ≡⟨ {!   !} ⟩
+    substType≤ anil leq t
+  ∎
+substType≤1 (σ asnoc t' / x) leq t = {!   !}
+{-  begin
+    substType σ (liftType 1 t)
+  ≡⟨ {!   !} ⟩
+    substType≤ σ leq t
+  ∎
+  -}
+
+substType≤n : {m m' n : ℕ} → (σ : AListType (n + m) m') → (leq :  m ≤ (n + m)) → (t : Type m) → substType σ (liftType n t) ≡ substType≤ σ leq t
+substType≤n σ leq t = {!   !}
 
 -- 型環境 (Γ : Cxt {m} n) 関係
 
@@ -139,13 +184,14 @@ substCxt≤ : {m m' m'' n : ℕ} → AListType m' m'' → (m≤m' : m ≤ m') �
 substCxt≤ σ m≤m' Γ = Data.Vec.map (substType σ) (liftCxt≤ m≤m' Γ)
 
 substAnilm≤m : {m : ℕ} → (x : Type m) → (m≤m : m ≤ m) → substType anil (liftType≤ m≤m x) ≡ x
-substAnilm≤m {m} x m≤m = begin
+substAnilm≤m {m} x m≤m =
+            begin
               substType anil (liftType≤ m≤m x)
-             ≡⟨ cong (λ x₁ → substType anil x₁) (liftTypem≤m m m≤m x) ⟩
+            ≡⟨ cong (λ x₁ → substType anil x₁) (liftTypem≤m m m≤m x) ⟩
                substType anil x
-             ≡⟨ fold-id x ⟩
+            ≡⟨ fold-id x ⟩
                x
-             ∎
+            ∎
 
 -- substCxt anil Γ は Γ と同じ
 substCxtAnil : {m n : ℕ} → (Γ : Cxt {m} n) → substCxt anil Γ ≡ Γ

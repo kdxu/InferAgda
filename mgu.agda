@@ -4,6 +4,7 @@ open import Data.Unit hiding (_≤_)
 open import Data.Nat hiding (fold)
 open import Data.Nat.Properties
 open import Data.Fin hiding (_+_; _≤_; fold)
+open import Data.Fin.Properties
 open import Data.Sum
 open import Data.Product
 open import Data.Maybe
@@ -20,6 +21,14 @@ private module M = IsCommutativeSemiring
 
 +-comm : ∀ m n → m + n ≡  n + m
 +-comm = M.+-comm isCommutativeSemiring
+
++-suc : ∀ m n → m + suc n ≡ suc (m + n)
++-suc zero    n = refl
++-suc (suc m) n = cong suc (+-suc m n)
+
+m≤m :  ∀ m →  m ≤ m
+m≤m zero = z≤n
+m≤m (suc m) = s≤s (m≤m m)
 
 ---------------------------------------------------------------
 
@@ -44,7 +53,7 @@ infix 5 ⟦_⟧
 ⟦ d1 :*: d2 ⟧' P (x1 , x2) = ⟦ d1 ⟧' P x1 × ⟦ d2 ⟧' P x2
 ⟦ rec       ⟧' P x = P x
 
-everywhere : (D : Desc) → {R : Set} → (P : R → Set) → ((x : R) → P x) → 
+everywhere : (D : Desc) → {R : Set} → (P : R → Set) → ((x : R) → P x) →
              (d : ⟦ D ⟧ R) → ⟦ D ⟧' P d
 everywhere base P f tt = tt
 everywhere (D1 :+: D2) P f (inj₁ x) = everywhere D1 P f x
@@ -96,7 +105,7 @@ ind {D} P phi f (F x) = phi x (everywhere D P (ind P phi f) x)
 ind P phi f (M x) = f x
 
 {-
-fmap-fold : {D D' : Desc} → {m : ℕ} → 
+fmap-fold : {D D' : Desc} → {m : ℕ} →
        (d : ⟦ D ⟧ (Fix D' m)) →
        ⟦ D ⟧' (λ t → fold F M t ≡ t) d → fmap D (fold F M) d ≡ d
 fmap-fold {base} tt tt = refl
@@ -109,8 +118,8 @@ fmap-fold {rec} d p = p
 
 -- 上記の fmap-fold の M を M' x ≡ M x である任意の M' でも大丈夫にしたもの
 -- （functional extensionality を避けるため）
-fmap-fold-ext : {D D' : Desc} → {m : ℕ} → 
-            {M' : Fin m → Fix D' m} → (∀ x → M' x ≡ M x) → 
+fmap-fold-ext : {D D' : Desc} → {m : ℕ} →
+            {M' : Fin m → Fix D' m} → (∀ x → M' x ≡ M x) →
        (d : ⟦ D ⟧ (Fix D' m)) →
        ⟦ D ⟧' (λ t → fold F M' t ≡ t) d → fmap D (fold F M') d ≡ d
 fmap-fold-ext {base} M'x≡Mx tt tt = refl
@@ -120,13 +129,13 @@ fmap-fold-ext {D1 :*: D2} M'x≡Mx (d1 , d2) (p1 , p2) =
   cong₂ _,_ (fmap-fold-ext {D1} M'x≡Mx d1 p1) (fmap-fold-ext {D2} M'x≡Mx d2 p2)
 fmap-fold-ext {rec} M'x≡Mx d p = p
 
-fmap-fold : {D D' : Desc} → {m : ℕ} → 
+fmap-fold : {D D' : Desc} → {m : ℕ} →
        (d : ⟦ D ⟧ (Fix D' m)) →
        ⟦ D ⟧' (λ t → fold F M t ≡ t) d → fmap D (fold F M) d ≡ d
 fmap-fold {D} d p = fmap-fold-ext {D} (λ y → refl) d p
 
 fold-id-ext : {D : Desc} → {m : ℕ} →
-          {M' : Fin m → Fix D m} → (∀ x → M' x ≡ M x) → 
+          {M' : Fin m → Fix D m} → (∀ x → M' x ≡ M x) →
           (t : Fix D m) → fold F M' t ≡ t
 fold-id-ext {D} {m} {M'} M'x≡Mx =
   ind (λ t → fold F M' t ≡ t)
@@ -191,8 +200,8 @@ mvar-map f t = fold F f t
 mvar-map-fin : {D : Desc} → {m m' : ℕ} → (f : Fin m → Fin m') → Fix D m → Fix D m'
 mvar-map-fin f = mvar-map (M ∘ f)
 
--- 
-fmap-fold-M : {D D' : Desc} → {m m' m'' : ℕ} → 
+--
+fmap-fold-M : {D D' : Desc} → {m m' m'' : ℕ} →
        (f : Fin m' → Fin m'') → (g : Fin m → Fin m') →
        (d : ⟦ D ⟧ (Fix D' m)) →
        ⟦ D ⟧' (λ t → fold {D'} {m'} {Fix D' m''} F (M ∘ f) (fold F (M ∘ g) t) ≡ fold F (M ∘ (f ∘ g)) t) d →
@@ -204,7 +213,7 @@ fmap-fold-M {D1 :*: D2} f g (d1 , d2) (p1 , p2) =
   cong₂ _,_ (fmap-fold-M {D1} f g d1 p1) (fmap-fold-M {D2} f g d2 p2)
 fmap-fold-M {rec} f g d p = p
 
--- 
+--
 fmap-fold-M2 : {D D' : Desc} → {m1 m2 m3 : ℕ} →
        (f : Fin m2 → Fix D' m3) → (g : Fin m1 → Fix D' m2) →
        (d : ⟦ D ⟧ (Fix D' m1)) →
@@ -227,7 +236,7 @@ fold-add2 {D} f g =
       (λ d x → cong F (fmap-fold-M2 {D} f g d x))
       (λ x → refl)
 
--- 
+--
 fold-add : {D : Desc} → {m m' m'' : ℕ} → (f : Fin m' → Fin m'') → (g : Fin m → Fin m') →
         (t : Fix D m) → fold {D} {m'} {Fix D m''} F (M ∘ f) (fold {D} F (M ∘ g) t) ≡ fold F (M ∘ (f ∘ g)) t
 fold-add {D} {m} {m'} {m''} f g t = fold-add2 {D} {m} {m'} {m''} (M ∘ f) (M ∘ g) t
@@ -250,6 +259,10 @@ mvar-map-fin-add f g t = fold-add f g t
 inject+' : ∀ m' {m} → Fin m → Fin (m' + m)
 inject+' zero x = x
 inject+' (suc m) x = inject₁ (inject+' m x)
+
+inject+'zero : ∀ {m} → (x : Fin m) → inject+' zero x ≡ x
+inject+'zero zero = refl
+inject+'zero (suc x) = cong suc refl
 
 m+sucn≡sucm+n : (m n : ℕ) → m + suc n ≡ suc (m + n)
 m+sucn≡sucm+n zero n = refl
@@ -275,9 +288,36 @@ inject+equal (suc m') x rewrite inject+''suc m' x = cong inject₁ (inject+equal
 liftFix : {D : Desc} → (m' : ℕ) → {m : ℕ} → Fix D m → Fix D (m' + m)
 liftFix {D} m' {m} t = mvar-map-fin (inject+' m') t
 
+mvar-map-fin-id : {D : Desc} → {m : ℕ} → (t : Fix D m) →  mvar-map-fin (inject+' zero) t ≡ t
+mvar-map-fin-id t = fold-id t
+
+liftFixZero : {D : Desc} → {m : ℕ} → (t : Fix D m) → t  ≡ liftFix zero t
+liftFixZero {D} {m} t = sym (mvar-map-fin-id t)
+
 -- liftFix≤ m≤m' t : t の中の型変数の数を m から m' に増やす
 liftFix≤ : {D : Desc} → {m m' : ℕ} → (m≤m' : m ≤ m') → Fix D m → Fix D m'
 liftFix≤ m≤m' t = mvar-map-fin (λ x → inject≤ x m≤m') t
+
+inject≤-refl : ∀ {m n} (i : Fin n) (n≤n : n ≤ n) → inject≤ i n≤n ≡ i
+inject≤-refl zero (s≤s leq) = refl
+inject≤-refl (suc i) (s≤s n≤n) = cong suc (inject≤-refl i n≤n)
+
+-- n 持ち上げるのは≤も+もおなじ
+inject≤≡1 : {m : ℕ} → (x : Fin m) → (n : ℕ) → (leq : m ≤ suc m) → inject≤ x leq ≡ inject₁ x
+inject≤≡1 () n z≤n
+inject≤≡1 zero n (s≤s leq) = refl
+inject≤≡1 (suc x) n (s≤s leq) = cong suc (inject≤≡1 x n leq)
+
+inject≤≡+ : {m : ℕ} → (x : Fin m) → (n : ℕ) → (leq : m ≤ n + m) → inject≤ x leq ≡ inject+' n x
+inject≤≡+ x zero leq = inject≤-refl x leq
+inject≤≡+ x (suc n₁) leq =
+  begin
+    {!   !}
+  ≡⟨ {!   !} ⟩
+    {!   !}
+  ≡⟨ sym (inject≤≡1 ? {!   !} {!   !})⟩
+    inject₁ (inject+' n₁ x)
+  ∎
 
 -- injectm≤m x m≤m : x を m≤m で増やしても x のまま
 injectm≤m : {m : ℕ} → (x : Fin m) → (m≤m : m ≤ m) → inject≤ x m≤m ≡ x
@@ -380,15 +420,15 @@ checkInv-F' {rec} x d | just d' | [ eq ] rewrite eq = inj₁ (d' , refl)
 checkInv-F : {D : Desc} → {m : ℕ} → (x : Fin (suc m)) → (d : ⟦ D ⟧ (Fix D (suc m))) →
            (r : ⟦ D ⟧' (λ (t : Fix D (suc m)) → {t' : Fix D m} →
                         check {D} x t ≡ just t' →
-                        (Σ[ d2 ∈ ⟦ D ⟧ (Fix D (suc m)) ] Σ[ d' ∈ ⟦ D ⟧ (Fix D m) ] 
+                        (Σ[ d2 ∈ ⟦ D ⟧ (Fix D (suc m)) ] Σ[ d' ∈ ⟦ D ⟧ (Fix D m) ]
                          (t ≡ F d2) × (t' ≡ F d') × (check-F {D} x (fmap D (check x) d2) ≡ just (F d'))) ⊎
-                        (Σ[ y2 ∈ Fin (suc m) ] Σ[ y' ∈ Fin m ] 
+                        (Σ[ y2 ∈ Fin (suc m) ] Σ[ y' ∈ Fin m ]
                          (t ≡ M y2) × (t' ≡ M y') × (thick x y2 ≡ just y'))) d) →
            {t' : Fix D m} →
-           check {D} x (F d) ≡ just t' → 
-           (Σ[ d2 ∈ ⟦ D ⟧ (Fix D (suc m)) ] Σ[ d' ∈ ⟦ D ⟧ (Fix D m) ] 
+           check {D} x (F d) ≡ just t' →
+           (Σ[ d2 ∈ ⟦ D ⟧ (Fix D (suc m)) ] Σ[ d' ∈ ⟦ D ⟧ (Fix D m) ]
             (F {D = D} d ≡ F d2) × (t' ≡ F d') × (check-F {D} x (fmap D (check x) d2) ≡ just (F d'))) ⊎
-           (Σ[ y2 ∈ Fin (suc m) ] Σ[ y' ∈ Fin m ] 
+           (Σ[ y2 ∈ Fin (suc m) ] Σ[ y' ∈ Fin m ]
             (F {D = D} d ≡ M y2) × (t' ≡ M y') × (thick x y2 ≡ just y'))
 checkInv-F {base} x tt tt refl = inj₁ (tt , tt , refl , refl , refl)
 checkInv-F {D1 :+: D2} x (inj₁ d1) r eq with check-F' {D1 :+: D2} x (inj₁ (fmap D1 (check x) d1))
@@ -422,41 +462,41 @@ checkInv-F {rec} x d r () | nothing
 checkInv-F {rec} x d r refl | just t' with r refl
 checkInv-F {rec} x .(F d2) r refl | just .(F d') | inj₁ (d2 , d' , refl , refl , eq3) =
   inj₁ (F d2 , F d' , refl , refl , lem1 eq3)
-  where lem1 : check {rec} x (F d2) ≡ just (F d') → 
+  where lem1 : check {rec} x (F d2) ≡ just (F d') →
                check {rec} x (F (F d2)) ≡ just (F (F d'))
         lem1 eq rewrite eq = refl
 checkInv-F {rec} x .(M y2) r refl | just .(M y') | inj₂ (y2 , y' , refl , refl , eq3) =
   inj₁ (M y2 , M y' , refl , refl , lem2 eq3)
-  where lem2 : thick x y2 ≡ just y' → 
+  where lem2 : thick x y2 ≡ just y' →
                check {rec} x (F (M y2)) ≡ just (F (M y'))
         lem2 eq rewrite eq = refl
 
 checkInv-M' : {D : Desc} → {m : ℕ} → (x y : Fin (suc m)) → {t' : Fix D m} →
-           check {D} x (M y) ≡ just t' → 
+           check {D} x (M y) ≡ just t' →
            (Σ[ y' ∈ Fin m ] (t' ≡ M y') × (thick x y ≡ just y'))
 checkInv-M' x y eq with thick x y
 checkInv-M' x y () | nothing
 checkInv-M' x y refl | just y' = (y' , refl , refl)
 
 checkInv-M : {D : Desc} → {m : ℕ} → (x y : Fin (suc m)) → {t' : Fix D m} →
-           check {D} x (M y) ≡ just t' → 
-           Σ[ y2 ∈ Fin (suc m) ] Σ[ y' ∈ Fin m ] 
+           check {D} x (M y) ≡ just t' →
+           Σ[ y2 ∈ Fin (suc m) ] Σ[ y' ∈ Fin m ]
             (M {D = D} y ≡ M y2) × (t' ≡ M y') × (thick x y2 ≡ just y')
 checkInv-M x y eq with checkInv-M' x y eq
 ... | (y' , t'≡My' , thickxy≡justy') = (y , y' , refl , t'≡My' , thickxy≡justy')
 
 checkInv : {D : Desc} → {m : ℕ} → (x : Fin (suc m)) → (t : Fix D (suc m)) → {t' : Fix D m} →
            check {D} x t ≡ just t' →
-           (Σ[ d ∈ ⟦ D ⟧ (Fix D (suc m)) ] Σ[ d' ∈ ⟦ D ⟧ (Fix D m) ] 
+           (Σ[ d ∈ ⟦ D ⟧ (Fix D (suc m)) ] Σ[ d' ∈ ⟦ D ⟧ (Fix D m) ]
             (t ≡ F d) × (t' ≡ F d') × (check-F {D} x (fmap D (check x) d) ≡ just (F d'))) ⊎
-           (Σ[ y ∈ Fin (suc m) ] Σ[ y' ∈ Fin m ] 
+           (Σ[ y ∈ Fin (suc m) ] Σ[ y' ∈ Fin m ]
             (t ≡ M y) × (t' ≡ M y') × (thick x y ≡ just y'))
 checkInv {D} {m} x =
   ind (λ (t : Fix D (suc m)) → {t' : Fix D m} →
            check {D} x t ≡ just t' →
-           (Σ[ d ∈ ⟦ D ⟧ (Fix D (suc m)) ] Σ[ d' ∈ ⟦ D ⟧ (Fix D m) ] 
+           (Σ[ d ∈ ⟦ D ⟧ (Fix D (suc m)) ] Σ[ d' ∈ ⟦ D ⟧ (Fix D m) ]
             (t ≡ F d) × (t' ≡ F d') × (check-F {D} x (fmap D (check x) d) ≡ just (F d'))) ⊎
-           (Σ[ y ∈ Fin (suc m) ] Σ[ y' ∈ Fin m ] 
+           (Σ[ y ∈ Fin (suc m) ] Σ[ y' ∈ Fin m ]
             (t ≡ M y) × (t' ≡ M y') × (thick x y ≡ just y')))
       (λ d r eq → checkInv-F x d r eq)
       (λ y eq → inj₂ (checkInv-M x y eq))
@@ -495,7 +535,7 @@ private
   check3 : check {D0} zero ex3b ≡ just ex3a
   check3 = refl
 
-  test0 : Σ[ d ∈ ⟦ D0 ⟧ (Fix D0 (suc zero)) ] Σ[ d' ∈ ⟦ D0 ⟧ (Fix D0 zero) ] 
+  test0 : Σ[ d ∈ ⟦ D0 ⟧ (Fix D0 (suc zero)) ] Σ[ d' ∈ ⟦ D0 ⟧ (Fix D0 zero) ]
           (ex0 ≡ F d) × (ex1 ≡ F d') × (check-F' {D0} zero (fmap D0 (check zero) d) ≡ just d')
   test0 = (d0 , d1 , refl , refl , refl)
 
@@ -526,7 +566,7 @@ phi4 : check zero [F (inj₁ tt)] : Fix base (suc zero)
 phi5 : check zero [F (inj₁ tt)] : Fix base (suc zero)
        = [F (inj₁ tt)] : Fix (base :+: base :*: base) zero
 -}
-  
+
 {-
 D = base :+: rec :*: rec なら、
 [D](Fix D' m) = Unit + (Fix D' m) * (Fix D' m)
@@ -605,7 +645,7 @@ mvar-sub anil = M
 mvar-sub (σ asnoc t' / x) = mvar-map (mvar-sub σ) ∘ (t' for x)
 
 -- substFix σ t : t に σ を適用した型を返す
-substFix : {D : Desc} → {m m' : ℕ} → AList D m m' → Fix D m → Fix D m' 
+substFix : {D : Desc} → {m m' : ℕ} → AList D m m' → Fix D m → Fix D m'
 substFix σ t = mvar-map (mvar-sub σ) t
 
 -- substFix≤ σ m≤m' t : t の中の型変数の数を m から m'' に増やしてからσをかける
@@ -613,10 +653,10 @@ substFix≤ : {D : Desc} → {m m' m'' : ℕ} → AList D m'' m' →
             (m≤m'' : m ≤ m'') → Fix D m → Fix D m'
 substFix≤ σ m≤m'' t = mvar-map (mvar-sub σ) (liftFix≤ m≤m'' t)
 
--- 型変数 x と y を unify する代入を返す 
+-- 型変数 x と y を unify する代入を返す
 flexFlex : {D : Desc} → {m : ℕ} → (x y : Fin m) → Σ[ m' ∈ ℕ ] AList D m m'
 flexFlex {D} {zero} () y
-flexFlex {D} {suc m} x y with thick x y 
+flexFlex {D} {suc m} x y with thick x y
 ... | nothing = (suc m , anil) -- x = y だった。代入の必要なし
 ... | just y' = (m , anil asnoc (M y') / x) -- M y' for x を返す
 
@@ -738,10 +778,10 @@ _extends_ {D} {m} (m2 , σ2) (m1 , σ1) =
 
 -- 任意のσは anil の拡張になっている
 σextendsNil : {D : Desc} → {m : ℕ} → (σ : Σ[ m' ∈ ℕ ] AList D m m') → σ extends (m , anil)
-σextendsNil (m' , σ) s t eq rewrite M-id s | M-id t = cong (substFix σ) eq 
+σextendsNil (m' , σ) s t eq rewrite M-id s | M-id t = cong (substFix σ) eq
 
 -- asnoc しても拡張関係は保たれる
-extends-asnoc : {D : Desc} → {m m1 m2 : ℕ} → {σ1 : AList D m m1} → {σ2 : AList D m m2} → 
+extends-asnoc : {D : Desc} → {m m1 m2 : ℕ} → {σ1 : AList D m m1} → {σ2 : AList D m m2} →
         {r : Fix D m} → {z : Fin (suc m)} →
         (m2 , σ2) extends (m1 , σ1) →
         (m2 , σ2 asnoc r / z) extends (m1 , σ1 asnoc r / z)
@@ -779,7 +819,7 @@ inj₂-equal : {A B : Set} → {b1 b2 : B} → inj₂ {A = A} b1 ≡ inj₂ b2 �
 inj₂-equal refl = refl
 
 -- extends しても eq の関係は変わらない
-extends-eq : {D D' : Desc} → {m m1 m2 : ℕ} → {σ1 : AList D' m m1} → {σ2 : AList D' m m2} → 
+extends-eq : {D D' : Desc} → {m m1 m2 : ℕ} → {σ1 : AList D' m m1} → {σ2 : AList D' m m2} →
         (s t : ⟦ D ⟧ (Fix D' m)) →
         (m2 , σ2) extends (m1 , σ1) →
         fmap D (fold F (mvar-sub σ1)) s ≡ fmap D (fold F (mvar-sub σ1)) t →
@@ -796,7 +836,7 @@ extends-eq {D1 :*: D2} {σ1 = σ1} {σ2 = σ2} (s1 , s2) (t1 , t2) ex eq =
             (extends-eq {D2} {σ1 = σ1} {σ2 = σ2} s2 t2 ex (cong proj₂ eq))
 extends-eq {rec} s t ex eq = ex s t eq
 
--- 型変数 x と y を unify する代入を返す 
+-- 型変数 x と y を unify する代入を返す
 flexFlex2 : {D : Desc} → {m : ℕ} → (x1 x2 : Fin m) →
             (Σ[ m' ∈ ℕ ] Σ[ σ ∈ AList D m m' ]
              substFix σ (M x1) ≡ substFix σ (M x2))
@@ -913,7 +953,7 @@ mutual
             ex' = extends-asnoc {D} {σ1 = σ} {σ2 = σ'} {r = r} {z = z} ex
   ... | nothing = nothing
 
-  amgu2' : {D D' : Desc} → {m : ℕ} → (t1 t2 : ⟦ D ⟧ (Fix D' m)) → 
+  amgu2' : {D D' : Desc} → {m : ℕ} → (t1 t2 : ⟦ D ⟧ (Fix D' m)) →
         (acc : Σ[ m' ∈ ℕ ] AList D' m m') →
         Maybe (Σ[ m' ∈ ℕ ] Σ[ σ ∈ AList D' m m' ]
                (m' , σ) extends acc ×

@@ -61,6 +61,9 @@ lemma : ∀ m1 → (suc (suc m1)) ∸ m1 ≡ suc (suc (m1 ∸ m1))
 lemma zero = refl
 lemma (suc m1) = cong (λ x → x) (lemma m1)
 
+substType≤n : {m m' n : ℕ} → (σ :  AListType (n + m) m') → (leq :  m ≤ (n + m)) → (t : Type m) → substType σ (liftType n t) ≡ substType≤ σ leq t
+substType≤n {n = zero} σ leq t = {! leq  !}
+substType≤n {n = zero} σ (s≤s leq) t = ?
 
 substTypeTrans : ∀ {m n m1 m1' m2 m2'}
                     → (x : Type m)
@@ -170,9 +173,9 @@ infer m Γ (Fst s)
     with infer m Γ s
 ... | nothing = nothing
 ... | just (m1' , m1 , m≤m1' , σ , t1 , w)
-    with mgu  (liftType 2 t1)  (liftType 1 (TVar (fromℕ m1)) ∏ ((TVar (fromℕ (suc m1)))))
+    with mgu2  (liftType 2 t1)  (liftType 1 (TVar (fromℕ m1)) ∏ ((TVar (fromℕ (suc m1)))))
 ... | nothing = nothing
-... | just (m2 , σ2) =
+... | just (m2 , σ2 , eq2) =
     just (suc (suc m1) ∸ m1 + m1' , (m2 , (leq' , (σ' , ( τ , FstW)))))
     where
           leq' : m ≤ (suc (suc m1) ∸ m1) + m1'
@@ -186,28 +189,36 @@ infer m Γ (Fst s)
                       (suc (suc m1) ∸ m1) + m1'
                   □
 
-          m1≤m1+2 : (m1 ≤ suc (suc m1))
-          m1≤m1+2 = ≤-steps 2 (m≤m {!   !})
+          m1≤2+m1 : (m1 ≤ suc (suc m1))
+          m1≤2+m1 = ≤-steps 2 (m≤m m1)
 
           τ : Type m2
           τ = substType σ2 (liftType 1 (TVar (fromℕ m1)))
           τ' : Type m2
           τ' = substType σ2 (TVar (fromℕ (suc m1)))
           σ' : AListType (suc (suc m1) ∸ m1 + m1') m2
-          σ' = σ2 +⟨ m1≤m1+2 ⟩ σ
+          σ' = σ2 +⟨ m1≤2+m1 ⟩ σ
           w' : WellTypedTerm (substCxt≤ σ m≤m1' Γ) t1
           w' = w
 -- leq' : m ≤ (suc (suc m1) ∸ m1) + m1'
--- m1≤m1+2 : (m1 ≤ suc (suc m1))
+-- m1≤2+m1 : (m1 ≤ suc (suc m1))
 -- m≤m1' : m ≤ m1'
-          Γ1≡Γ2 : (substCxt≤ σ' leq' Γ) ≡ (substCxt≤ σ2 m1≤m1+2 (substCxt≤ σ m≤m1' Γ))
-          Γ1≡Γ2 = substCxtTrans Γ σ σ2 σ' m≤m1' m1≤m1+2 leq' refl
+          Γ1≡Γ2 : (substCxt≤ σ' leq' Γ) ≡ (substCxt≤ σ2 m1≤2+m1 (substCxt≤ σ m≤m1' Γ))
+          Γ1≡Γ2 = substCxtTrans Γ σ σ2 σ' m≤m1' m1≤2+m1 leq' refl
+-- eq2 : substType σ (liftType 2 t1)  ≡ substType σ (liftType 1 (TVar (fromℕ m1)) ∏ ((TVar (fromℕ (suc m1)))))
 
-          τ1≡τ2 : (τ ∏ τ') ≡ (substType≤ σ2 m1≤m1+2 t1)
-          τ1≡τ2 = {!   !}
+          τ1≡τ2 : (τ ∏ τ') ≡ (substType≤ σ2 m1≤2+m1 t1)
+          τ1≡τ2 = sym
+                (begin
+                  substType≤ σ2 m1≤2+m1 t1
+                ≡⟪ sym (substType≤n σ2 m1≤2+m1 t1) ⟫
+                  substType σ2 (liftType 2 t1)
+                ≡⟪ eq2 ⟫
+                  substType σ2 (liftType 1 (TVar (fromℕ m1))) ∏ substType σ2 (TVar (fromℕ (suc m1)))
+                ∎)
 
-          w2 : WellTypedTerm (substCxt≤ σ2 m1≤m1+2 (substCxt≤ σ m≤m1' Γ)) (substType≤ σ2 m1≤m1+2 t1)
-          w2 = substWTerm≤ σ2 m1≤m1+2 w
+          w2 : WellTypedTerm (substCxt≤ σ2 m1≤2+m1 (substCxt≤ σ m≤m1' Γ)) (substType≤ σ2 m1≤2+m1 t1)
+          w2 = substWTerm≤ σ2 m1≤2+m1 w
 
           W : WellTypedTerm (substCxt≤ σ' leq' Γ) (τ ∏ τ')
           W rewrite τ1≡τ2 | Γ1≡Γ2 = w2
