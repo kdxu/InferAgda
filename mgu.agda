@@ -9,7 +9,7 @@ open import Data.Sum
 open import Data.Product
 open import Data.Maybe
 open import Function using (_∘_)
-
+open ≤-Reasoning renaming (begin_ to start_; _∎ to _□ ; _≡⟨_⟩_ to _≡⟪_⟫_ )
 open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
 
@@ -19,6 +19,46 @@ open import Algebra.Structures
  -- for type definitions, such as IsCommutativeSemiring
 private module M = IsCommutativeSemiring
 
+m≤m :  ∀ m →  m ≤ m
+m≤m zero = z≤n
+m≤m (suc m) = s≤s (m≤m m)
+
+m≤m' :  ∀ m m' →  m ≤ m' →  m ≤ suc m'
+m≤m' zero m' x = z≤n
+m≤m' (suc m) ._ (s≤s x) = s≤s (m≤m' m _ x)
+
+m≤m'≡k+m≤k+m' :  ∀ k m m' →  m ≤ m' → k + m ≤ k + m'
+m≤m'≡k+m≤k+m' zero m m' x = x
+m≤m'≡k+m≤k+m' (suc k) m m' x = s≤s (m≤m'≡k+m≤k+m' k m m' x)
+
+m≤m'≡k'+m≤k+m :  ∀ k k' m →  k ≤ k' → k + m ≤ k' + m
+m≤m'≡k'+m≤k+m .0 zero m z≤n = m≤m m
+m≤m'≡k'+m≤k+m zero (suc k') m leq = ≤-step (≤-steps k' (m≤m m))
+m≤m'≡k'+m≤k+m (suc k) (suc k') m (s≤s leq) = s≤s (m≤m'≡k'+m≤k+m k k' m leq)
+
+m≤m'≡k+m≤k'+m' :  ∀ k k'  m m' →  m ≤ m' → k ≤ k' →  (k + m ≤ k' + m')
+m≤m'≡k+m≤k'+m' k k' m m' leq leq2  =
+          start
+            k + m
+          ≤⟨ m≤m'≡k+m≤k+m' k m m' leq ⟩
+            k + m'
+          ≤⟨ m≤m'≡k'+m≤k+m k k' m' leq2 ⟩
+            k' + m'
+           □
+
+≤-trans : ∀{m j k} →  (m≤j : m ≤ j) →  (j≤k : j ≤ k) → (m ≤ k)
+≤-trans z≤n j≤k = z≤n
+≤-trans (s≤s m≤j) (s≤s j≤k) = s≤s (≤-trans m≤j j≤k)
+
+≡-to-≤ : ∀ m m' → m ≡ m' → m ≤ m'
+≡-to-≤ zero .0 refl = z≤n
+≡-to-≤ (suc m) zero ()
+≡-to-≤ (suc m) (suc .m) refl = s≤s (≡-to-≤ m m refl)
+
+lemma : ∀ m1 → (suc (suc m1)) ∸ m1 ≡ suc (suc (m1 ∸ m1))
+lemma zero = refl
+lemma (suc m1) = cong (λ x → x) (lemma m1)
+
 +-comm : ∀ m n → m + n ≡  n + m
 +-comm = M.+-comm isCommutativeSemiring
 
@@ -26,9 +66,7 @@ private module M = IsCommutativeSemiring
 +-suc zero    n = refl
 +-suc (suc m) n = cong suc (+-suc m n)
 
-m≤m :  ∀ m →  m ≤ m
-m≤m zero = z≤n
-m≤m (suc m) = s≤s (m≤m m)
+
 
 ---------------------------------------------------------------
 
@@ -308,16 +346,28 @@ inject≤≡1 () n z≤n
 inject≤≡1 zero n (s≤s leq) = refl
 inject≤≡1 (suc x) n (s≤s leq) = cong suc (inject≤≡1 x n leq)
 
+inject≤Trans :  {m n l : ℕ} → (x : Fin m) → (leq : n ≤ l) → (leq' : m ≤ n) → (leq'' : m ≤ l)
+    → inject≤ x leq'' ≡ inject≤  (inject≤ x leq') leq
+inject≤Trans x leq leq' leq'' = {!   !}
+
 inject≤≡+ : {m : ℕ} → (x : Fin m) → (n : ℕ) → (leq : m ≤ n + m) → inject≤ x leq ≡ inject+' n x
 inject≤≡+ x zero leq = inject≤-refl x leq
-inject≤≡+ x (suc n₁) leq =
+inject≤≡+ {m} x (suc n₁) leq =
   begin
-    {!   !}
-  ≡⟨ {!   !} ⟩
-    {!   !}
-  ≡⟨ sym (inject≤≡1 ? {!   !} {!   !})⟩
+    inject≤ x leq
+  ≡⟨ inject≤Trans x leq1 leq2 leq ⟩
+    inject≤ (inject≤ x leq2) leq1
+  ≡⟨ {! inject≤≡1  !} ⟩
+    inject₁ (inject≤ x leq3)
+  ≡⟨ cong (λ x₁ → inject₁ x₁) (inject≤≡+ x n₁ leq3) ⟩
     inject₁ (inject+' n₁ x)
   ∎
+  where leq1 : suc m ≤ (suc n₁ + m)
+        leq1 = ≤-steps ? {!    !}
+        leq2 : m ≤ suc m
+        leq2 = {!   !}
+        leq3 : m ≤ n₁ + m
+        leq3 = ≤-steps n₁ (m≤m m)
 
 -- injectm≤m x m≤m : x を m≤m で増やしても x のまま
 injectm≤m : {m : ℕ} → (x : Fin m) → (m≤m : m ≤ m) → inject≤ x m≤m ≡ x
