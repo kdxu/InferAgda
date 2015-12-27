@@ -24,7 +24,7 @@ TypeDesc : Desc
 TypeDesc = base :+: rec :*: rec :+: rec :*: rec
 
 Type : (m : ℕ) → Set
-Type m = Fix TypeDesc m
+Type m = Fix TypeDesc ?
 
 TNat : {m : ℕ} → Type m
 TNat = F (inj₁ (inj₁ tt)) -- F (inj₁ tt)
@@ -73,9 +73,9 @@ inject≤add : {m m' : ℕ} → (k : ℕ) → (k+m≤m' : k + m ≤ m') → (m�
 inject≤add k k+m≤m' m≤m' x
   rewrite inject+equal k x = inject≤add2 k k+m≤m' m≤m' x
 
--- functional extensionality
-postulate
-  ext : forall {A B : Set} {f g : A -> B} -> (∀ (a : A) -> f a ≡ g a) -> f ≡ g
+-- functional extensionality -- moved to mgu.agda
+-- postulate
+--   ext : forall {A B : Set} {f g : A -> B} -> (∀ (a : A) -> f a ≡ g a) -> f ≡ g
 
 inject≤add-ext : {m m' : ℕ} → (k : ℕ) → (k+m≤m' : k + m ≤ m') → (m≤m' : m ≤ m') →
         (λ x → inject≤ x k+m≤m') ∘ (inject+' k) ≡ λ x → inject≤ x m≤m'

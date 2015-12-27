@@ -20,8 +20,8 @@ open import Algebra.Structures
 private module M = IsCommutativeSemiring
 
 m≤m :  ∀ m →  m ≤ m
-m≤m zero = z≤n
-m≤m (suc m) = s≤s (m≤m m)
+m≤m zero = ?
+m≤m (suc m) = ?
 
 m≤m' :  ∀ m m' →  m ≤ m' →  m ≤ suc m'
 m≤m' zero m' x = z≤n
@@ -112,11 +112,13 @@ fmap-id (D1 :+: D2) {inj₁ DX} = cong inj₁ (fmap-id D1)
 fmap-id (D1 :+: D2) {inj₂ DX} = cong inj₂ (fmap-id D2)
 fmap-id (D1 :*: D2) = cong₂ _,_ (fmap-id D1) (fmap-id D2)
 fmap-id rec = refl
+-}
 
 -- functional extensionality
 postulate
   ext : forall {A B : Set} {f g : A -> B} -> (∀ (a : A) -> f a ≡ g a) -> f ≡ g
 
+{-
 fmap-id2 : {X : Set} → (D : Desc) → fmap D {X} (λ x → x) ≡ λ DX → DX
 fmap-id2 D = ext (λ d → fmap-id D)
 -}
@@ -350,6 +352,10 @@ inject≤Trans zero z≤n () leq''
 inject≤Trans zero (s≤s leq) (s≤s leq') (s≤s leq'') = refl
 inject≤Trans (suc x) z≤n () leq''
 inject≤Trans (suc x) (s≤s leq) (s≤s leq') (s≤s leq'') = cong suc (inject≤Trans x leq leq' leq'')
+
+inject≤Trans' :  {m n l : ℕ} → (leq : n ≤ l) → (leq' : m ≤ n) → (leq'' : m ≤ l)
+    → (λ x → inject≤ x leq'') ≡ (λ x → inject≤ x leq) ∘ (λ x → inject≤ x leq')
+inject≤Trans' leq leq' leq'' = ext (λ x → inject≤Trans x leq leq' leq'')
 
 inject≤≡+ : {m : ℕ} → (x : Fin m) → (n : ℕ) → (leq : m ≤ n + m) → inject≤ x leq ≡ inject+' n x
 inject≤≡+ x zero leq = inject≤-refl x leq
@@ -692,6 +698,23 @@ _+⟨_⟩_ : {D : Desc} → {l m m' n : ℕ} →
 mvar-sub : {D : Desc} → {m m' : ℕ} → (σ : AList D m m') → Fin m → Fix D m'
 mvar-sub anil = M
 mvar-sub (σ asnoc t' / x) = mvar-map (mvar-sub σ) ∘ (t' for x)
+
+-- 代入と ++ は交換できる
+mvar-sub-++-commute : {D : Desc} → {m1 m2 m3 : ℕ} → (σ1 : AList D m2 m3) → (σ2 : AList D m1 m2) →
+  mvar-map (mvar-sub (σ1 ++ σ2)) ≡ (mvar-map (mvar-sub σ1)) ∘ (mvar-map (mvar-sub σ2))
+mvar-sub-++-commute σ1 anil = sym (ext (λ a → fold-add2 (mvar-sub σ1) M a))
+mvar-sub-++-commute σ1 (σ2 asnoc t / x) =
+  ext (λ a → begin
+    mvar-map (mvar-map (mvar-sub (σ1 ++ σ2)) ∘ (t for x)) a
+  ≡⟨ sym (fold-add2 (mvar-sub (σ1 ++ σ2)) (t for x) a) ⟩
+    mvar-map (mvar-sub (σ1 ++ σ2)) (mvar-map (t for x) a)
+  ≡⟨ cong (λ f → f (mvar-map (t for x) a)) (mvar-sub-++-commute σ1 σ2)  ⟩
+    mvar-map (mvar-sub σ1) (mvar-map (mvar-sub σ2) (mvar-map (t for x) a))
+  ≡⟨ cong (mvar-map (mvar-sub σ1)) (fold-add2 (mvar-sub σ2) (t for x) a) ⟩
+    mvar-map (mvar-sub σ1) (mvar-map (mvar-map (mvar-sub σ2) ∘ (t for x)) a)
+  ≡⟨ refl ⟩
+    ((mvar-map (mvar-sub σ1)) ∘ (mvar-map (mvar-map (mvar-sub σ2) ∘ (t for x)))) a
+  ∎)
 
 -- substFix σ t : t に σ を適用した型を返す
 substFix : {D : Desc} → {m m' : ℕ} → AList D m m' → Fix D m → Fix D m'
