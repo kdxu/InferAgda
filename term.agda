@@ -24,7 +24,7 @@ TypeDesc : Desc
 TypeDesc = base :+: rec :*: rec :+: rec :*: rec
 
 Type : (m : ℕ) → Set
-Type m = Fix TypeDesc ?
+Type m = Fix TypeDesc m
 
 TNat : {m : ℕ} → Type m
 TNat = F (inj₁ (inj₁ tt)) -- F (inj₁ tt)

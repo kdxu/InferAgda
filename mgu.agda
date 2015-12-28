@@ -19,9 +19,9 @@ open import Algebra.Structures
  -- for type definitions, such as IsCommutativeSemiring
 private module M = IsCommutativeSemiring
 
-m≤m :  ∀ m →  m ≤ m
-m≤m zero = ?
-m≤m (suc m) = ?
+m≤m :  ∀ m →  m ≤ m -- m ≤ n → (suc m) ≤ (suc n) , zero ≤ n
+m≤m zero = z≤n
+m≤m (suc m) = s≤s (m≤m m)
 
 m≤m' :  ∀ m m' →  m ≤ m' →  m ≤ suc m'
 m≤m' zero m' x = z≤n
