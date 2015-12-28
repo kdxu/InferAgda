@@ -22,7 +22,19 @@ open import term
 
 --------------------------------------------------------------------------------
 
-
+liftInject≤ :  ∀ {m m1 m1' m2 m2'}
+                    → (σ1 : AListType m1' m1)
+                    → (leq2 : m1 ≤ m2')
+                    → (leq2' : m1' ≤ m2' ∸ m1 + m1')
+                    → (a : Fin m1')
+                    → ((mvar-map (mvar-sub (liftAList≤ leq2 σ1)) ∘ M ∘ (λ x → inject≤ x leq2')) a
+              ≡ (mvar-map (M ∘ (λ x → inject≤ x leq2)) ∘ mvar-sub σ1) a)
+liftInject≤ σ1 leq2 leq2' a =
+              begin
+                (mvar-map (mvar-sub (liftAList≤ leq2 σ1)) ∘ M ∘ (λ x → inject≤ x leq2')) a
+              ≡⟪ {!   !} ⟫
+                (mvar-map (M ∘ (λ x → inject≤ x leq2)) ∘ mvar-sub σ1) a
+              ∎
 
 substTypeTrans : ∀ {m m1 m1' m2 m2'}
                     → (x : Type m)
@@ -62,7 +74,7 @@ substTypeTrans {m} {m1} {m1'} {m2} {m2'} t σ1 σ2 σ' leq1 leq2 leq' eq =
           (mvar-map (mvar-map (mvar-sub (liftAList≤ leq2 σ1)) ∘ (M ∘ (λ x → inject≤ x leq2')))
             (mvar-map-fin (λ x → inject≤ x leq1) t))
             ≡⟪ cong (λ f → mvar-map (mvar-sub σ2) (mvar-map f (mvar-map-fin (λ x → inject≤ x leq1) t)))
-                    (ext liftInject≤) ⟫
+                    (ext (liftInject≤ σ1 leq2 leq2')) ⟫
               mvar-map (mvar-sub σ2)
                 (mvar-map (mvar-map (M ∘ (λ x → inject≤ x leq2)) ∘ (mvar-sub σ1))
                   (mvar-map-fin (λ x → inject≤ x leq1) t))
@@ -75,9 +87,6 @@ substTypeTrans {m} {m1} {m1'} {m2} {m2'} t σ1 σ2 σ' leq1 leq2 leq' eq =
       ∎
               where leq2' : m1' ≤ m2' ∸ m1 + m1'
                     leq2' = n≤m+n (m2' ∸ m1) m1'
-                    liftInject≤ : (a : Fin m1') → ((mvar-map (mvar-sub (liftAList≤ leq2 σ1)) ∘ M ∘ (λ x → inject≤ x leq2')) a
-                                  ≡ (mvar-map (M ∘ (λ x → inject≤ x leq2)) ∘ mvar-sub σ1) a)
-                    liftInject≤ a = {!   !}
 
 substCxtTrans : ∀ {m n m1 m1' m2 m2'}
                     → (Γ : Cxt {m} n)
