@@ -326,7 +326,8 @@ inject+equal (suc m') x rewrite inject+''suc m' x = cong inject₁ (inject+equal
 -- inject≤′
 inject≤′ : ∀ {m m'} → Fin m → m ≤′ m' → Fin m'
 inject≤′ x ≤′-refl = x
-inject≤′ x (≤′-step m≤′m') = suc (inject≤′ x m≤′m')
+inject≤′ x (≤′-step m≤′m') = inject₁ (inject≤′ x m≤′m')
+-- inject≤′ x (≤′-step m≤′m') = suc (inject≤′ x m≤′m')
 
 m<′m'→¬m'<′m : {m m' : ℕ} → m <′ m' → ¬ m' <′ m
 m<′m'→¬m'<′m {zero} m<′m' ()
@@ -341,9 +342,9 @@ inject≤′-refl i (≤′-step m≤′m) with m<′m'→¬m'<′m m≤′m m�
 ... | ()
 
 m<′m'-step : {m m' : ℕ} → m ≤′ m' → (m≤′1+m' : m ≤′ suc m') → Σ[ m≤′m' ∈ m ≤′ m' ] (m≤′1+m' ≡ ≤′-step m≤′m')
-m<′m'-step m<′m ≤′-refl with m<′m'→¬m'<′m m<′m m<′m 
+m<′m'-step m<′m ≤′-refl with m<′m'→¬m'<′m m<′m m<′m
 ... | ()
-m<′m'-step leq (≤′-step m≤′m') = (m≤′m' , refl) 
+m<′m'-step leq (≤′-step m≤′m') = (m≤′m' , refl)
 
 -- liftFix m' t : t の中の型変数の数を m' だけ増やす
 liftFix : {D : Desc} → (m' : ℕ) → {m : ℕ} → Fix D m → Fix D (m' + m)
@@ -700,14 +701,14 @@ m'∸m+m≡m' {m} {m'} m≤m' = begin
 
 liftAList≤' : {D : Desc} → {l m m' : ℕ} → (m≤′m' : m ≤′ m') →
              AList D l m → AList D ((m' ∸ m) + l) m'
-liftAList≤' {m = m} ≤′-refl σ rewrite n∸n≡0 m = σ 
+liftAList≤' {m = m} ≤′-refl σ rewrite n∸n≡0 m = σ
 liftAList≤' (≤′-step m≤′m') σ rewrite +-∸-assoc 1 (≤′⇒≤ m≤′m') =
   liftAList1 (liftAList≤' m≤′m' σ)
 
 -- liftAList≤ m≤m' lst : lst の中の型変数の数を m から m' まで増やす
 liftAList≤ : {D : Desc} → {l m m' : ℕ} → (m≤m' : m ≤ m') →
              AList D l m → AList D ((m' ∸ m) + l) m'
-liftAList≤ m≤m' σ = liftAList≤' (≤⇒≤′ m≤m') σ 
+liftAList≤ m≤m' σ = liftAList≤' (≤⇒≤′ m≤m') σ
 {-
 liftAList≤ {D} {l} {m} {m'} m≤m' σ =
   subst (λ n → AList D ((m' ∸ m) + l) n)
