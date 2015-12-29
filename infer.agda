@@ -22,19 +22,107 @@ open import term
 
 --------------------------------------------------------------------------------
 
-liftInject≤ :  ∀ {m m1 m1' m2 m2'}
+inject≤-refl-ext : ∀ {D : Desc} {m : ℕ}
+                    → (leq : m ≤ m)
+                    → (λ x → M {D} (inject≤ x leq)) ≡ M
+inject≤-refl-ext leq = ext (λ x → cong M (inject≤-refl x leq))
+
+liftInject≤'' :  ∀ {m1 m1' m2'}
+                    → (σ1 : AListType m1' m1)
+                    → (leq2 : m1 ≤′ m2')
+                    → (leq2' : m1' ≤′ m2' ∸ m1 + m1')
+                    → (a : Fin m1')
+                    → mvar-sub (liftAList≤' leq2 σ1) (inject≤′ a leq2')
+                    ≡ mvar-map (M ∘ (λ x → inject≤′ x leq2)) (mvar-sub σ1 a)
+liftInject≤'' {m1} {m1'} {.m1} σ1 ≤′-refl leq2' a
+  rewrite n∸n≡0 m1 | inject≤′-refl a leq2'
+  = begin
+      mvar-sub σ1 a
+    ≡⟪ sym (fold-id (mvar-sub σ1 a)) ⟫
+      mgu.fold F M (mvar-sub σ1 a)
+    ∎
+liftInject≤'' {m1} {m1'} {.(suc m2')} σ1 (≤′-step {n = m2'} leq2) leq2' a
+  rewrite +-∸-assoc 1 (≤′⇒≤ leq2)
+  with m<′m'-step (n≤′m+n (m2' ∸ m1) m1') leq2'
+... | (m1'≤′m2'∸m1+m1' , leq) rewrite leq
+  = begin
+      mvar-sub (liftAList1 (liftAList≤' leq2 σ1)) (suc (inject≤′ a m1'≤′m2'∸m1+m1'))
+{-  ≡⟪ refl ⟫
+      mgu.fold F (mvar-sub (liftAList1 (liftAList≤' leq2 σ1)))
+        (mgu.fold F (M ∘ suc)
+          (M (inject≤′ a m1'≤′m2'∸m1+m1'))) -}
+    ≡⟪ fold-add2 (mvar-sub (liftAList1 (liftAList≤' leq2 σ1))) (M ∘ suc) (M (inject≤′ a m1'≤′m2'∸m1+m1')) ⟫
+{-    mgu.fold F (mvar-map (mvar-sub (liftAList1 (liftAList≤' leq2 σ1))) ∘ (M ∘ suc))
+        (M (inject≤′ a m1'≤′m2'∸m1+m1'))
+    ≡⟪ refl ⟫ -}
+      (mvar-map (mvar-sub (liftAList1 (liftAList≤' leq2 σ1))) ∘ (M ∘ suc))
+        (inject≤′ a m1'≤′m2'∸m1+m1')
+    ≡⟪ {!!} ⟫
+      (mvar-map (M ∘ suc) ∘ (mvar-sub (liftAList≤' leq2 σ1)))
+        (inject≤′ a m1'≤′m2'∸m1+m1')
+{-  ≡⟪ refl ⟫
+      mgu.fold F (mvar-map (M ∘ suc) ∘ (mvar-sub (liftAList≤' leq2 σ1)))
+        (M (inject≤′ a m1'≤′m2'∸m1+m1'))
+    ≡⟪ refl ⟫
+      mgu.fold F (M ∘ suc)
+        (mgu.fold F
+          (mvar-sub (liftAList≤' leq2 σ1)) (M (inject≤′ a m1'≤′m2'∸m1+m1'))) -}
+    ≡⟪ refl ⟫
+      mgu.fold F (M ∘ suc)
+        (mvar-sub (liftAList≤' leq2 σ1) (inject≤′ a m1'≤′m2'∸m1+m1'))
+    ≡⟪ cong (mgu.fold F (M ∘ suc)) (liftInject≤'' σ1 leq2 m1'≤′m2'∸m1+m1' a) ⟫
+      mgu.fold F (M ∘ suc)
+        (mvar-map (M ∘ (λ x → inject≤′ x leq2)) (mvar-sub σ1 a))
+    ≡⟪ refl ⟫
+      mgu.fold F (M ∘ suc)
+        (mgu.fold F (M ∘ (λ x → inject≤′ x leq2)) (mvar-sub σ1 a))
+    ≡⟪ fold-add suc (λ x → inject≤′ x leq2) (mvar-sub σ1 a) ⟫
+      mgu.fold F (M ∘ (suc ∘ λ x → inject≤′ x leq2)) (mvar-sub σ1 a)
+    ≡⟪ refl ⟫
+      mgu.fold F (λ x → M (suc (inject≤′ x leq2))) (mvar-sub σ1 a)
+    ∎
+
+liftInject≤' :  ∀ {m1 m1' m2'}
+                    → (σ1 : AListType m1' m1)
+                    → (leq2 : m1 ≤ m2')
+                    → (leq2' : m1' ≤ m2' ∸ m1 + m1')
+                    → (a : Fin m1')
+                    → mvar-sub (liftAList≤' (≤⇒≤′ leq2) σ1) (inject≤ a leq2')
+                    ≡ mvar-map (M ∘ (λ x → inject≤ x leq2)) (mvar-sub σ1 a)
+liftInject≤' {m1} {m1'} {m2'} σ1 leq2 leq2' a = begin
+--                     → mvar-sub (liftAList≤' leq2 σ1) (inject≤′ a leq2')
+--                     ≡ mvar-map (M ∘ (λ x → inject≤′ x leq2)) (mvar-sub σ1 a)
+    mvar-sub (liftAList≤' (≤⇒≤′ leq2) σ1) (inject≤ a leq2')
+  ≡⟪ {!!} ⟫
+    mvar-sub (liftAList≤' (≤⇒≤′ leq2) σ1) (inject≤′ a (≤⇒≤′ leq2'))
+  ≡⟪ liftInject≤'' σ1 (≤⇒≤′ leq2) (≤⇒≤′ leq2') a ⟫
+    mvar-map (M ∘ (λ x → inject≤′ x (≤⇒≤′ leq2))) (mvar-sub σ1 a)
+  ≡⟪ {!!} ⟫
+    mvar-map (M ∘ (λ x → inject≤ x leq2)) (mvar-sub σ1 a)
+  ∎
+
+liftInject≤ :  ∀ {m1 m1' m2'}
                     → (σ1 : AListType m1' m1)
                     → (leq2 : m1 ≤ m2')
                     → (leq2' : m1' ≤ m2' ∸ m1 + m1')
                     → (a : Fin m1')
                     → ((mvar-map (mvar-sub (liftAList≤ leq2 σ1)) ∘ M ∘ (λ x → inject≤ x leq2')) a
               ≡ (mvar-map (M ∘ (λ x → inject≤ x leq2)) ∘ mvar-sub σ1) a)
-liftInject≤ anil z≤n leq2' ()
-liftInject≤ anil (s≤s leq2) leq2' a = {!   !}
-liftInject≤ (σ1 asnoc t' / x) leq2 leq2' zero = {!   !}
-liftInject≤ (σ1 asnoc t' / x) leq2 leq2' (suc a) = {!   !}
+liftInject≤ σ1 leq2 leq2' a =
+              begin
+                (mvar-map (mvar-sub (liftAList≤ leq2 σ1)) ∘ M ∘ (λ x → inject≤ x leq2')) a
+              ≡⟪ refl ⟫
+                mvar-map (mvar-sub (liftAList≤ leq2 σ1)) (M (inject≤ a leq2'))
+              ≡⟪ refl ⟫
+                mvar-sub (liftAList≤ leq2 σ1) (inject≤ a leq2')
+              ≡⟪ liftInject≤' σ1  leq2 leq2' a  ⟫
+              -- ≡⟪ liftInject≤' σ1 (≤⇒≤′ leq2) leq2 leq2' a  ⟫
+                mvar-map (M ∘ (λ x → inject≤ x leq2)) (mvar-sub σ1 a)
+              ≡⟪ refl ⟫
+                (mvar-map (M ∘ (λ x → inject≤ x leq2)) ∘ mvar-sub σ1) a
+              ∎
 
-
+{-
 substTypeTrans : ∀ {m m1 m1' m2 m2'}
                     → (x : Type m)
                     → (σ1 : AListType m1' m1)
@@ -72,15 +160,15 @@ substTypeTrans {m} {m1} {m1'} {m2} {m2'} t σ1 σ2 σ' leq1 leq2 leq' eq =
         mvar-map (mvar-sub σ2)
           (mvar-map (mvar-map (mvar-sub (liftAList≤ leq2 σ1)) ∘ (M ∘ (λ x → inject≤ x leq2')))
             (mvar-map-fin (λ x → inject≤ x leq1) t))
-            ≡⟪ cong (λ f → mvar-map (mvar-sub σ2) (mvar-map f (mvar-map-fin (λ x → inject≤ x leq1) t)))
-                    (ext (liftInject≤ σ1 leq2 leq2')) ⟫
-              mvar-map (mvar-sub σ2)
-                (mvar-map (mvar-map (M ∘ (λ x → inject≤ x leq2)) ∘ (mvar-sub σ1))
-                  (mvar-map-fin (λ x → inject≤ x leq1) t))
+      ≡⟪ cong (λ f → mvar-map (mvar-sub σ2) (mvar-map f (mvar-map-fin (λ x → inject≤ x leq1) t)))
+              (ext (liftInject≤ σ1 leq2 leq2')) ⟫
+        mvar-map (mvar-sub σ2)
+          (mvar-map (mvar-map (M ∘ (λ x → inject≤ x leq2)) ∘ (mvar-sub σ1))
+            (mvar-map-fin (λ x → inject≤ x leq1) t))
       ≡⟪ cong (mvar-map (mvar-sub σ2))
-                    (sym (fold-add2 (M ∘ (λ x → inject≤ x leq2)) (mvar-sub σ1) (mvar-map-fin (λ x → inject≤ x leq1) t))) ⟫
-              mvar-map (mvar-sub σ2) (mvar-map-fin (λ x → inject≤ x leq2)
-               (mvar-map (mvar-sub σ1) (mvar-map-fin (λ x → inject≤ x leq1) t)))
+              (sym (fold-add2 (M ∘ (λ x → inject≤ x leq2)) (mvar-sub σ1) (mvar-map-fin (λ x → inject≤ x leq1) t))) ⟫
+        mvar-map (mvar-sub σ2) (mvar-map-fin (λ x → inject≤ x leq2)
+          (mvar-map (mvar-sub σ1) (mvar-map-fin (λ x → inject≤ x leq1) t)))
       ≡⟪ refl ⟫
               substType≤ σ2 leq2 (substType≤ σ1 leq1 t)
       ∎
@@ -165,7 +253,7 @@ infer m Γ (App s1 s2) | just (m'' , m' , leq , σ , t , w) | just (m1'' , m1' ,
               s1' : WellTypedTerm (substCxt≤ (σ2 +⟨ (n≤m+n 1 m1') ⟩ (σ1 +⟨ leq1 ⟩ σ)) leq2 Γ) (substType σ2 {! substCxt≤ σ m≤m'' Γ) τ  !})
               s1' = {!   !}
               s2' : WellTypedTerm {!   !} {!   !}
-              s2' = {!    !}
+              s2' = {!   !}
 
 infer m Γ (App s1 s2) | just (m'' , m' , leq , σ , t , w) | just (m1'' , m1' , leq1 , σ1 , t1 , w1) | nothing = nothing
 infer m Γ (App s1 s2) | nothing = nothing
@@ -225,5 +313,6 @@ infer m Γ (Fst s)
 
           FstW : WellTypedTerm (substCxt≤ σ' leq' Γ) τ
           FstW = Fst W
-infer m Γ (Snd s) = {!    !}
-infer m Γ (Cons t1 t2) = {!    !}
+infer m Γ (Snd s) = {!   !}
+infer m Γ (Cons t1 t2) = {!   !}
+-}

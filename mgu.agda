@@ -10,6 +10,7 @@ open import Data.Product
 open import Data.Maybe
 open import Function using (_∘_)
 open ≤-Reasoning renaming (begin_ to start_; _∎ to _□ ; _≡⟨_⟩_ to _≡⟪_⟫_ )
+open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
 open Relation.Binary.PropositionalEquality.≡-Reasoning
 
@@ -321,6 +322,28 @@ inject+''suc m' {.(suc m)} (suc {n = m} x) rewrite m+sucn≡sucm+n m' m = cong s
 inject+equal : ∀ m' {m} → (x : Fin m) → inject+' m' x ≡ inject+'' m' x
 inject+equal zero x = sym (inject+''zero x)
 inject+equal (suc m') x rewrite inject+''suc m' x = cong inject₁ (inject+equal m' x)
+
+-- inject≤′
+inject≤′ : ∀ {m m'} → Fin m → m ≤′ m' → Fin m'
+inject≤′ x ≤′-refl = x
+inject≤′ x (≤′-step m≤′m') = suc (inject≤′ x m≤′m')
+
+m<′m'→¬m'<′m : {m m' : ℕ} → m <′ m' → ¬ m' <′ m
+m<′m'→¬m'<′m {zero} m<′m' ()
+m<′m'→¬m'<′m {suc m} {zero} () m'<′m
+m<′m'→¬m'<′m {suc m} {suc m'} 1+m<′1+m' 1+m'<′1+m
+  with ≤′⇒≤ 1+m<′1+m' | ≤′⇒≤ 1+m'<′1+m
+... | s≤s m<′m' | s≤s m'<′m = m<′m'→¬m'<′m (≤⇒≤′ m<′m') (≤⇒≤′ m'<′m)
+
+inject≤′-refl : ∀ {m} (i : Fin m) (m≤′m : m ≤′ m) → inject≤′ i m≤′m ≡ i
+inject≤′-refl i ≤′-refl = refl
+inject≤′-refl i (≤′-step m≤′m) with m<′m'→¬m'<′m m≤′m m≤′m
+... | ()
+
+m<′m'-step : {m m' : ℕ} → m ≤′ m' → (m≤′1+m' : m ≤′ suc m') → Σ[ m≤′m' ∈ m ≤′ m' ] (m≤′1+m' ≡ ≤′-step m≤′m')
+m<′m'-step m<′m ≤′-refl with m<′m'→¬m'<′m m<′m m<′m 
+... | ()
+m<′m'-step leq (≤′-step m≤′m') = (m≤′m' , refl) 
 
 -- liftFix m' t : t の中の型変数の数を m' だけ増やす
 liftFix : {D : Desc} → (m' : ℕ) → {m : ℕ} → Fix D m → Fix D (m' + m)
@@ -668,19 +691,29 @@ liftAList : {D : Desc} → {m m' : ℕ} →
             (n : ℕ) → AList D m m' → AList D (n + m) (n + m')
 liftAList zero σ = σ
 liftAList (suc n) σ = liftAList1 (liftAList n σ)
+
 m'∸m+m≡m' : {m m' : ℕ} → m ≤ m' → m' ∸ m + m ≡ m'
 m'∸m+m≡m' {m} {m'} m≤m' = begin
   m' ∸ m + m   ≡⟨ +-comm (m' ∸ m) m ⟩
   m + (m' ∸ m) ≡⟨ m+n∸m≡n m≤m' ⟩
   m'           ∎
 
+liftAList≤' : {D : Desc} → {l m m' : ℕ} → (m≤′m' : m ≤′ m') →
+             AList D l m → AList D ((m' ∸ m) + l) m'
+liftAList≤' {m = m} ≤′-refl σ rewrite n∸n≡0 m = σ 
+liftAList≤' (≤′-step m≤′m') σ rewrite +-∸-assoc 1 (≤′⇒≤ m≤′m') =
+  liftAList1 (liftAList≤' m≤′m' σ)
+
 -- liftAList≤ m≤m' lst : lst の中の型変数の数を m から m' まで増やす
 liftAList≤ : {D : Desc} → {l m m' : ℕ} → (m≤m' : m ≤ m') →
              AList D l m → AList D ((m' ∸ m) + l) m'
+liftAList≤ m≤m' σ = liftAList≤' (≤⇒≤′ m≤m') σ 
+{-
 liftAList≤ {D} {l} {m} {m'} m≤m' σ =
   subst (λ n → AList D ((m' ∸ m) + l) n)
         ( m'∸m+m≡m' m≤m')
         (liftAList (m' ∸ m) σ)
+-}
 
 -- ふたつの代入をくっつける
 _++_ : {D : Desc} → {l m n : ℕ} →
