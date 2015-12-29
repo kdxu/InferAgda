@@ -29,12 +29,11 @@ liftInject≤ :  ∀ {m m1 m1' m2 m2'}
                     → (a : Fin m1')
                     → ((mvar-map (mvar-sub (liftAList≤ leq2 σ1)) ∘ M ∘ (λ x → inject≤ x leq2')) a
               ≡ (mvar-map (M ∘ (λ x → inject≤ x leq2)) ∘ mvar-sub σ1) a)
-liftInject≤ σ1 leq2 leq2' a =
-              begin
-                (mvar-map (mvar-sub (liftAList≤ leq2 σ1)) ∘ M ∘ (λ x → inject≤ x leq2')) a
-              ≡⟪ {!   !} ⟫
-                (mvar-map (M ∘ (λ x → inject≤ x leq2)) ∘ mvar-sub σ1) a
-              ∎
+liftInject≤ anil z≤n leq2' ()
+liftInject≤ anil (s≤s leq2) leq2' a = {!   !}
+liftInject≤ (σ1 asnoc t' / x) leq2 leq2' zero = {!   !}
+liftInject≤ (σ1 asnoc t' / x) leq2 leq2' (suc a) = {!   !}
+
 
 substTypeTrans : ∀ {m m1 m1' m2 m2'}
                     → (x : Type m)
@@ -166,7 +165,7 @@ infer m Γ (App s1 s2) | just (m'' , m' , leq , σ , t , w) | just (m1'' , m1' ,
               s1' : WellTypedTerm (substCxt≤ (σ2 +⟨ (n≤m+n 1 m1') ⟩ (σ1 +⟨ leq1 ⟩ σ)) leq2 Γ) (substType σ2 {! substCxt≤ σ m≤m'' Γ) τ  !})
               s1' = {!   !}
               s2' : WellTypedTerm {!   !} {!   !}
-              s2' = {!   !}
+              s2' = {!    !}
 
 infer m Γ (App s1 s2) | just (m'' , m' , leq , σ , t , w) | just (m1'' , m1' , leq1 , σ1 , t1 , w1) | nothing = nothing
 infer m Γ (App s1 s2) | nothing = nothing
@@ -226,5 +225,5 @@ infer m Γ (Fst s)
 
           FstW : WellTypedTerm (substCxt≤ σ' leq' Γ) τ
           FstW = Fst W
-infer m Γ (Snd s) = {!   !}
-infer m Γ (Cons t1 t2) = {!   !}
+infer m Γ (Snd s) = {!    !}
+infer m Γ (Cons t1 t2) = {!    !}
