@@ -1,5 +1,6 @@
 module infer where
 
+open import Data.Unit using (tt)
 open import Data.Nat
 open import Data.Vec hiding (_++_)
 open import Data.Vec.Properties
@@ -46,41 +47,51 @@ thickxyjust {suc m} {suc x} {suc y} refl | just y' | [ eq ] rewrite eq
   with thickxyjust {x = x} eq
 ... | eq2 rewrite eq2 = refl
 
-inject₁-liftAList1-commute : ∀ {m m' : ℕ}
+mutual
+  inject₁-liftAList1-commute-M : ∀ {m m' : ℕ}
+                    → (σ : AListType m' m)
+                    → (y : Fin m')
+                    → mvar-map (mvar-sub (liftAList1 σ)) (M (inject₁ y))
+                    ≡ mvar-map (λ u → M (inject₁ u)) ((mvar-sub σ) y)
+  inject₁-liftAList1-commute-M anil z = refl
+  inject₁-liftAList1-commute-M (σ asnoc t / x) y with thick x y | inspect (thick x) y
+  inject₁-liftAList1-commute-M (σ asnoc t / x) y | nothing | [ eq ] rewrite eq -- x = y
+    with thickxynothing {x = x} eq
+  ... | eq2 rewrite eq2 | fold-add2 (λ x₁ → M (inject₁ x₁)) (mvar-sub σ) t
+                        | fold-add2 (mvar-sub (liftAList1 σ)) (λ u → M (inject₁ u)) t
+    = inject₁-liftAList1-commute σ t
+  inject₁-liftAList1-commute-M (σ asnoc t / x) y | just y' | [ eq ] rewrite eq
+    with thickxyjust {x = x} eq
+  ... | eq2 rewrite eq2 = inject₁-liftAList1-commute-M σ y'
+
+  inject₁-liftAList1-commute-F : ∀ {m m' : ℕ}
+                    → (σ : AListType m' m)
+                    → (d : ⟦ TypeDesc ⟧ (Fix TypeDesc m') )
+                    → (r : ⟦ TypeDesc ⟧'
+                            (λ t → mgu.fold F
+                                      (λ z → mvar-map (mvar-sub (liftAList1 σ)) (M (inject₁ z))) t
+                                     ≡
+                                     mgu.fold F (λ z → mvar-map (λ u → M (inject₁ u)) (mvar-sub σ z)) t)
+                            d)
+                    → fmap TypeDesc
+                         (mgu.fold F (λ z → mvar-map (mvar-sub (liftAList1 σ)) (M (inject₁ z)))) d
+                    ≡ fmap TypeDesc
+                         (mgu.fold F (λ z → mvar-map (λ u → M (inject₁ u)) ((mvar-sub σ) z))) d
+  inject₁-liftAList1-commute-F σ (inj₁ (inj₁ tt)) r = refl
+  inject₁-liftAList1-commute-F σ (inj₁ (inj₂ (d1 , d2))) (r1 , r2)
+    = cong inj₁ (cong inj₂ (cong₂ _,_ r1 r2))
+  inject₁-liftAList1-commute-F σ (inj₂ (d1 , d2)) (r1 , r2) = cong inj₂ (cong₂ _,_ r1 r2)
+
+  inject₁-liftAList1-commute : ∀ {m m' : ℕ}
                     → (σ : AListType m' m)
                     → (t : Type m')
                     → mgu.fold F (λ z → mvar-map (mvar-sub (liftAList1 σ)) (M (inject₁ z))) t
                     ≡ mgu.fold F (λ z → mvar-map (λ u → M (inject₁ u)) ((mvar-sub σ) z)) t
-inject₁-liftAList1-commute anil t = refl
-inject₁-liftAList1-commute (σ asnoc t' / x) (F t) = {!!}
-inject₁-liftAList1-commute (σ asnoc t' / x) (M y) with thick x y | inspect (thick x) y
-inject₁-liftAList1-commute (σ asnoc t' / x) (M y) | nothing | [ eq ] rewrite eq -- x = y
-  with thickxynothing {x = x} eq
-... | eq2 rewrite eq2 | fold-add2 (λ x₁ → M (inject₁ x₁)) (mvar-sub σ) t'
-                      | fold-add2 (mvar-sub (liftAList1 σ)) (λ u → M (inject₁ u)) t'
-  = inject₁-liftAList1-commute σ t'
-inject₁-liftAList1-commute (σ asnoc t' / x) (M y) | just y' | [ eq ] rewrite eq
-  with thickxyjust {x = x} eq
-... | eq2 rewrite eq2 = inject₁-liftAList1-commute σ (M y')
-
-inject₁-liftAList1-commute' : ∀ {m m' : ℕ}
-                    → (σ : AListType m' m)
-                    → (y : Fin m')
-                    → (mvar-map (mvar-sub (liftAList1 σ)) ∘ (M ∘ inject₁)) y
-                    ≡ (mvar-map (M ∘ inject₁) ∘ (mvar-sub σ)) y
-inject₁-liftAList1-commute' σ y = inject₁-liftAList1-commute σ (M y)
-{-
-inject₁-liftAList1-commute' anil y = refl
-inject₁-liftAList1-commute' (σ asnoc t / x) y with thick x y | inspect (thick x) y
-inject₁-liftAList1-commute' (σ asnoc t / x) y | nothing | [ eq ] rewrite eq -- x = y
-  with thickxynothing {x = x} eq
-inject₁-liftAList1-commute' (σ asnoc F t / x) y | nothing | [ eq ] | eq2 rewrite eq2 = {!!}
-inject₁-liftAList1-commute' (σ asnoc M x' / x) y | nothing | [ eq ] | eq2 rewrite eq2
-  = inject₁-liftAList1-commute' σ x'
-inject₁-liftAList1-commute' (σ asnoc t / x) y | just y' | [ eq ] rewrite eq
-  with thickxyjust {x = x} eq
-... | eq2 rewrite eq2 = inject₁-liftAList1-commute' σ y'
--}
+  inject₁-liftAList1-commute σ =
+    ind (λ t → mgu.fold F (λ z → mvar-map (mvar-sub (liftAList1 σ)) (M (inject₁ z))) t
+              ≡ mgu.fold F (λ z → mvar-map (λ u → M (inject₁ u)) ((mvar-sub σ) z)) t)
+        (λ d r → cong F (inject₁-liftAList1-commute-F σ d r))
+        (λ x → inject₁-liftAList1-commute-M σ x)
 
 inject≤-refl-ext : ∀ {D : Desc} {m : ℕ}
                     → (leq : m ≤ m)
@@ -117,7 +128,7 @@ liftInject≤'' {m1} {m1'} {.(suc m2')} σ1 (≤′-step {n = m2'} leq2) leq2' a
     ≡⟪ refl ⟫ -}
       (mvar-map (mvar-sub (liftAList1 (liftAList≤' leq2 σ1))) ∘ (M ∘ inject₁))
         (inject≤′ a m1'≤′m2'∸m1+m1')
-    ≡⟪ inject₁-liftAList1-commute' (liftAList≤' leq2 σ1) (inject≤′ a m1'≤′m2'∸m1+m1') ⟫
+    ≡⟪ inject₁-liftAList1-commute (liftAList≤' leq2 σ1) (M (inject≤′ a m1'≤′m2'∸m1+m1')) ⟫
       (mvar-map (M ∘ inject₁) ∘ (mvar-sub (liftAList≤' leq2 σ1)))
         (inject≤′ a m1'≤′m2'∸m1+m1')
 {-  ≡⟪ refl ⟫
@@ -142,6 +153,33 @@ liftInject≤'' {m1} {m1'} {.(suc m2')} σ1 (≤′-step {n = m2'} leq2) leq2' a
       mgu.fold F (λ x → M (inject₁ (inject≤′ x leq2))) (mvar-sub σ1 a)
     ∎
 
+
+inject≤′-zero : ∀ {m1 m2}
+                    → (leq : m1 ≤ m2)
+                    → inject≤′ zero (≤⇒≤′ (s≤s leq)) ≡ zero
+inject≤′-zero leq with (≤⇒≤′ (s≤s leq))
+inject≤′-zero leq | ≤′-refl = refl
+inject≤′-zero leq | ≤′-step b = {!   !}
+
+inject≤≡≤' : ∀ {m1 m2}
+                    → (leq : m1 ≤ m2)
+                    → (a : Fin m1)
+                    → inject≤′ a (≤⇒≤′ leq) ≡  inject≤ a leq
+inject≤≡≤' z≤n ()
+inject≤≡≤' (s≤s leq) zero =  inject≤′-zero leq
+inject≤≡≤' (s≤s leq) (suc a) with (≤⇒≤′ (s≤s leq))
+inject≤≡≤' (s≤s leq) (suc a) | ≤′-refl = sym (inject≤-refl (suc a) (s≤s leq))
+inject≤≡≤' (s≤s leq) (suc a) | ≤′-step b = sym (begin
+                                                  suc (inject≤ a leq)
+                                                ≡⟪ {!   !} ⟫
+                                                  inject₁ (inject≤ a leq)
+                                                ≡⟪ cong (λ x → inject₁ x) (inject≤≡≤' {!   !} {!   !}) ⟫
+                                                  inject₁ (inject≤′ (suc a) b)
+                                                ∎)
+
+-- inject₁ (inject≤′ (suc a) b) ≡ suc (inject≤ a leq)
+-- suc (inject≤ a leq) ≡ inject₁ (in)
+
 liftInject≤' :  ∀ {m1 m1' m2'}
                     → (σ1 : AListType m1' m1)
                     → (leq2 : m1 ≤ m2')
@@ -151,11 +189,11 @@ liftInject≤' :  ∀ {m1 m1' m2'}
                     ≡ mvar-map (M ∘ (λ x → inject≤ x leq2)) (mvar-sub σ1 a)
 liftInject≤' {m1} {m1'} {m2'} σ1 leq2 leq2' a = begin
     mvar-sub (liftAList≤' (≤⇒≤′ leq2) σ1) (inject≤ a leq2')
-  ≡⟪ {!!} ⟫
+  ≡⟪ cong (λ x → mvar-sub (liftAList≤' (≤⇒≤′ leq2) σ1) x) (sym (inject≤≡≤' leq2' a)) ⟫
     mvar-sub (liftAList≤' (≤⇒≤′ leq2) σ1) (inject≤′ a (≤⇒≤′ leq2'))
   ≡⟪ liftInject≤'' σ1 (≤⇒≤′ leq2) (≤⇒≤′ leq2') a ⟫
     mvar-map (M ∘ (λ x → inject≤′ x (≤⇒≤′ leq2))) (mvar-sub σ1 a)
-  ≡⟪ {!!} ⟫
+  ≡⟪ cong (λ x₁ → mvar-map (M ∘ x₁) (mvar-sub σ1 a)) (ext (inject≤≡≤' leq2)) ⟫
     mvar-map (M ∘ (λ x → inject≤ x leq2)) (mvar-sub σ1 a)
   ∎
 
