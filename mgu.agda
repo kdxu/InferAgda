@@ -9,6 +9,8 @@ open import Data.Sum
 open import Data.Product
 open import Data.Maybe
 open import Function using (_∘_)
+open import Relation.Binary.PropositionalEquality
+open ≡-Reasoning
 open ≤-Reasoning renaming (begin_ to start_; _∎ to _□ ; _≡⟨_⟩_ to _≡⟪_⟫_ )
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
