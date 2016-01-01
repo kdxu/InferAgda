@@ -111,7 +111,7 @@ infer m Γ (App s1 s2) with infer m Γ s1
   t3≡t4 = {!   !}
 
   Γ1≡Γ2 : (substCxt≤ σ' leq' Γ) ≡ (substCxt≤ σ3 (≤-step (m≤m m2')) (substCxt≤ σ2 leq2 (substCxt σ1 (liftCxt≤ leq1 Γ))))
-  Γ1≡Γ2 =  ?
+  Γ1≡Γ2 =  {!   !}
 
   S1 : WellTypedTerm (substCxt≤ σ' leq' Γ) (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2')))
   S1 rewrite t1≡t2 | Γ1≡Γ2 = s1''
@@ -234,4 +234,10 @@ infer m Γ (Snd s) with infer m Γ s
           SndW : WellTypedTerm (substCxt≤ σ' leq' Γ) τ'
           SndW = Snd W
 
-infer m Γ (Cons t1 t2) = {!   !}
+infer m Γ (Cons s1 s2) with infer m Γ s1
+... | nothing = nothing
+... |  just (m1' , m1 , leq1 , σ1 , t1 , w1 ) with infer m Γ s2
+... | nothing = nothing
+... | just (m2' , m2 , leq2 , σ2 , t2 , w2 ) with mgu2 t1 {!   !}
+... | nothing = nothing
+... | just (m3 , σ3 , eq) = {!   !}
