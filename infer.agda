@@ -45,13 +45,13 @@ infer m Γ (Lam s) with infer (suc m) (TVar (fromℕ m) ∷ liftCxt 1 Γ)
     tx : Type m'
     tx = substType≤ σ leq (TVar (fromℕ m))
 
+    eq : substCxt≤ σ leq (liftCxt 1 Γ) ≡ substCxt≤ σ leq' Γ
+    eq = substCxt≤+1 Γ leq leq' σ
+
+    w' : WellTypedTerm (tx ∷ substCxt≤ σ leq' Γ) t
+    w' = subst (λ l → WellTypedTerm (tx ∷ l) t) eq w
     LamS : WellTypedTerm (substCxt≤ σ leq' Γ) (tx ⇒ t)
     LamS = Lam (mvar-sub σ (inject≤ (fromℕ m) leq)) w'
-     where
-        w' : WellTypedTerm (tx ∷ substCxt≤ σ leq' Γ) t
-        w' = subst (λ l → WellTypedTerm (tx ∷ l) t) eq w
-           where eq : substCxt≤ σ leq (liftCxt 1 Γ) ≡ substCxt≤ σ leq' Γ
-                 eq = substCxt≤+1 Γ leq leq' σ
 
 infer m Γ (Lam s) | nothing = nothing
 infer m Γ (App s1 s2) with infer m Γ s1
@@ -81,16 +81,11 @@ infer m Γ (App s1 s2) with infer m Γ s1
   t' : Type m3'
   t' = substType σ3 (TVar (fromℕ m2'))
 
-  s1' : WellTypedTerm (substCxt σ1 (liftCxt≤ leq1 Γ)) t1
-  s1' = w1
-  s2' : WellTypedTerm (substCxt σ2 (liftCxt≤ leq2 (substCxt σ1 (liftCxt≤ leq1 Γ)))) t2
-  s2' = w2
+  s1' : WellTypedTerm (substCxt≤ σ3 (≤-step (m≤m m2')) (substCxt≤ σ2 leq2 (substCxt σ1 (liftCxt≤ leq1 Γ)))) (substType≤ σ3 (≤-step (m≤m m2')) (substType≤ σ2 leq2 t1))
+  s1' = substWTerm≤ σ3 (≤-step (m≤m m2')) (substWTerm≤ σ2 leq2 w1)
 
-  s1'' : WellTypedTerm (substCxt≤ σ3 (≤-step (m≤m m2')) (substCxt≤ σ2 leq2 (substCxt σ1 (liftCxt≤ leq1 Γ)))) (substType≤ σ3 (≤-step (m≤m m2')) (substType≤ σ2 leq2 t1))
-  s1'' = substWTerm≤ σ3 (≤-step (m≤m m2')) (substWTerm≤ σ2 leq2 s1')
-
-  s2'' : WellTypedTerm (substCxt≤ σ3 (≤-step (m≤m m2')) (substCxt≤ σ2 leq2 (substCxt σ1 (liftCxt≤ leq1 Γ)))) (substType≤ σ3 (≤-step (m≤m m2')) t2)
-  s2'' = substWTerm≤ σ3 (≤-step (m≤m m2')) s2'
+  s2' : WellTypedTerm (substCxt≤ σ3 (≤-step (m≤m m2')) (substCxt≤ σ2 leq2 (substCxt σ1 (liftCxt≤ leq1 Γ)))) (substType≤ σ3 (≤-step (m≤m m2')) t2)
+  s2' = substWTerm≤ σ3 (≤-step (m≤m m2')) w2
 
 -- eq :  substType σ3 (liftType 1 (substType σ2 (liftType≤ leq2 t1))) ≡ substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2'))
 -- substType σ3 (liftType 1 (substType σ2 (liftType≤ leq2 t1))) ≡  substType (σ3 +⟨ (≤-step (m≤m m2')) ⟩ σ2) t1
@@ -122,9 +117,9 @@ infer m Γ (App s1 s2) with infer m Γ s1
         ∎
 
   S1 : WellTypedTerm (substCxt≤ σ' leq' Γ) (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2')))
-  S1 rewrite t1≡t2 | Γ1≡Γ2 = s1''
+  S1 rewrite t1≡t2 | Γ1≡Γ2 = s1'
   S2 : WellTypedTerm (substCxt≤ σ' leq' Γ) (substType σ3 (liftType 1 t2))
-  S2 rewrite t3≡t4 | Γ1≡Γ2  = s2''
+  S2 rewrite t3≡t4 | Γ1≡Γ2  = s2'
 
   AppS1S2 : WellTypedTerm (substCxt≤ σ' leq' Γ) t'
   AppS1S2 = App S1 S2
@@ -160,8 +155,7 @@ infer m Γ (Fst s)
           τ' = substType σ2 (TVar (fromℕ (suc m1)))
           σ' : AListType (suc (suc m1) ∸ m1 + m1') m2
           σ' = σ2 +⟨ m1≤2+m1 ⟩ σ
-          w' : WellTypedTerm (substCxt≤ σ m≤m1' Γ) t1
-          w' = w
+
 -- leq' : m ≤ (suc (suc m1) ∸ m1) + m1'
 -- m1≤2+m1 : (m1 ≤ suc (suc m1))
 -- m≤m1' : m ≤ m1'
@@ -216,9 +210,6 @@ infer m Γ (Snd s) with infer m Γ s
 
           σ' : AListType (suc (suc m1) ∸ m1 + m1') m2
           σ' = σ2 +⟨ m1≤2+m1 ⟩ σ
-
-          w' : WellTypedTerm (substCxt≤ σ m≤m1' Γ) t1
-          w' = w
 
           Γ1≡Γ2 : (substCxt≤ σ' leq' Γ) ≡ (substCxt≤ σ2 m1≤2+m1 (substCxt≤ σ m≤m1' Γ))
           Γ1≡Γ2 = substCxtTrans Γ σ σ2 σ' m≤m1' m1≤2+m1 leq' refl
