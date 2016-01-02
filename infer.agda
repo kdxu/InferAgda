@@ -92,26 +92,34 @@ infer m Γ (App s1 s2) with infer m Γ s1
   s2'' : WellTypedTerm (substCxt≤ σ3 (≤-step (m≤m m2')) (substCxt≤ σ2 leq2 (substCxt σ1 (liftCxt≤ leq1 Γ)))) (substType≤ σ3 (≤-step (m≤m m2')) t2)
   s2'' = substWTerm≤ σ3 (≤-step (m≤m m2')) s2'
 
-  t-lemma : ∀{t : Type m} →
-            (substType≤ σ' leq' t ≡ substType σ3 (liftType 1 (substType σ2 (liftType≤ leq2 (substType σ1 (liftType≤ leq1 t))))))
-  t-lemma {t} =
-          begin
-                substType≤ σ' leq' t
-          ≡⟨ substTypeTrans t (σ2 +⟨ leq2 ⟩ σ1) σ3 σ' (≤-trans leq1 (n≤m+n (m2'' ∸ m1') m1'')) (≤-step (m≤m m2')) leq' refl ⟩
-                substType≤ σ3 (≤-step (m≤m m2')) (substType≤ (σ2 +⟨ leq2 ⟩ σ1) (≤-trans leq1 (n≤m+n (m2'' ∸ m1') m1'')) t)
-          ≡⟨ cong (λ x → substType≤ σ3 (≤-step (m≤m m2')) x) (substTypeTrans t σ1 σ2 (σ2 +⟨ leq2 ⟩ σ1) leq1 leq2 (≤-trans leq1 (n≤m+n (m2'' ∸ m1') m1'')) refl) ⟩
-                substType≤ σ3 (≤-step (m≤m m2')) (substType≤ σ2 leq2 (substType σ1 (liftType≤ leq1 t)))
-          ≡⟨ {!   !} ⟩
-                substType σ3 (liftType 1 (substType σ2 (liftType≤ leq2 (substType σ1 (liftType≤ leq1 t)))))
-          ∎
-
+-- eq :  substType σ3 (liftType 1 (substType σ2 (liftType≤ leq2 t1))) ≡ substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2'))
+-- substType σ3 (liftType 1 (substType σ2 (liftType≤ leq2 t1))) ≡  substType (σ3 +⟨ (≤-step (m≤m m2')) ⟩ σ2) t1
+-- 示すのは substType≤ σ3 (≤-step (m≤m m2')) (substType≤ σ2 leq2 t1) ≡ substType σ3 (liftType 1 (substType σ2 (liftType≤ leq2 t1)))
   t1≡t2 : substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2')) ≡ substType≤ σ3 (≤-step (m≤m m2')) (substType≤ σ2 leq2 t1)
-  t1≡t2  = trans (sym eq) (t-lemma)
+  t1≡t2  =
+        begin
+          substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2'))
+        ≡⟨ sym eq ⟩
+          substType σ3 (liftType 1 (substType σ2 (liftType≤ leq2 t1)))
+        ≡⟨ sym (substType≤≡n 1 (substType σ2 (liftType≤ leq2 t1)) (≤-step (m≤m m2')) σ3) ⟩
+          substType≤ σ3 (≤-step (m≤m m2')) (substType σ2 (liftType≤ leq2 t1))
+        ≡⟨ refl ⟩
+          substType≤ σ3 (≤-step (m≤m m2')) (substType≤ σ2 leq2 t1)
+        ∎
   t3≡t4 :(substType σ3 (liftType 1 t2)) ≡ (substType≤ σ3 (≤-step (m≤m m2')) t2)
-  t3≡t4 = {!   !}
+  t3≡t4 = sym (substType≤≡n 1 t2 (≤-step (m≤m m2')) σ3)
 
   Γ1≡Γ2 : (substCxt≤ σ' leq' Γ) ≡ (substCxt≤ σ3 (≤-step (m≤m m2')) (substCxt≤ σ2 leq2 (substCxt σ1 (liftCxt≤ leq1 Γ))))
-  Γ1≡Γ2 =  {!   !}
+  Γ1≡Γ2 =
+        begin
+        (substCxt≤ σ' leq' Γ)
+        ≡⟨ substCxtTrans Γ (σ2 +⟨ leq2 ⟩ σ1) σ3 σ' (≤-trans leq1 (n≤m+n (m2'' ∸ m1') m1'')) (≤-step (m≤m m2')) leq' refl ⟩
+        (substCxt≤ σ3 (≤-step (m≤m m2')) (substCxt≤ (σ2 +⟨ leq2 ⟩ σ1) (≤-trans leq1 (n≤m+n (m2'' ∸ m1') m1'')) Γ))
+        ≡⟨ cong (λ x → substCxt≤ σ3 (≤-step (m≤m m2')) x) (substCxtTrans Γ σ1 σ2 (σ2 +⟨ leq2 ⟩ σ1) leq1 leq2 (≤-trans leq1 (n≤m+n (m2'' ∸ m1') m1'')) refl) ⟩
+        (substCxt≤ σ3 (≤-step (m≤m m2')) (substCxt≤ σ2 leq2 (substCxt≤ σ1 leq1 Γ)))
+        ≡⟨ refl ⟩
+        (substCxt≤ σ3 (≤-step (m≤m m2')) (substCxt≤ σ2 leq2 (substCxt σ1 (liftCxt≤ leq1 Γ))))
+        ∎
 
   S1 : WellTypedTerm (substCxt≤ σ' leq' Γ) (substType σ3 (liftType 1 t2 ⇒ TVar (fromℕ m2')))
   S1 rewrite t1≡t2 | Γ1≡Γ2 = s1''
@@ -229,15 +237,35 @@ infer m Γ (Snd s) with infer m Γ s
           w2 = substWTerm≤ σ2 m1≤2+m1 w
 
           W : WellTypedTerm (substCxt≤ σ' leq' Γ) (τ ∏ τ')
-          W rewrite τ1≡τ2 | Γ1≡Γ2 = w2
-
+          W rewrite τ1≡τ2 | Γ1≡Γ2 =  w2
           SndW : WellTypedTerm (substCxt≤ σ' leq' Γ) τ'
           SndW = Snd W
 
 infer m Γ (Cons s1 s2) with infer m Γ s1
 ... | nothing = nothing
-... |  just (m1' , m1 , leq1 , σ1 , t1 , w1 ) with infer m Γ s2
+... |  just (m1' , m1 , leq1 , σ1 , t1 , w1 ) with infer m1 (substCxt≤ σ1 leq1 Γ) s2
 ... | nothing = nothing
-... | just (m2' , m2 , leq2 , σ2 , t2 , w2 ) with mgu2 t1 {!   !}
-... | nothing = nothing
-... | just (m3 , σ3 , eq) = {!   !}
+... | just (m2' , m2 , leq2 , σ2 , t2 , w2 ) = just (m2' ∸ m1 + m1' , (m2 , (leq' , (σ2 +⟨ leq2 ⟩ σ1 , ((substType≤ σ2 leq2 t1 ∏ t2) , ConsS1S2)))))
+        where
+          leq' : m ≤ (m2' ∸ m1 + m1')
+          leq' =  start
+                    m
+                  ≤⟨ leq1 ⟩
+                    m1'
+                  ≤⟨ ≤-steps (m2' ∸ m1) (m≤m m1') ⟩
+                    ((m2' ∸ m1) + m1')
+                  ≤⟨ ≡-to-≤ (m2' ∸ m1 + m1') (m2' ∸ m1 + m1') refl ⟩
+                    (m2' ∸ m1 + m1')
+                  □
+          σ' : AListType (m2' ∸ m1 + m1') m2
+          σ' = σ2 +⟨ leq2 ⟩ σ1
+          s1' : WellTypedTerm (substCxt≤ σ2 leq2 (substCxt≤ σ1 leq1 Γ)) (substType≤ σ2 leq2 t1)
+          s1' = substWTerm≤ σ2 leq2 w1
+          Γ1≡Γ2 : (substCxt≤ σ' leq' Γ) ≡ (substCxt≤ σ2 leq2 (substCxt≤ σ1 leq1 Γ))
+          Γ1≡Γ2 = substCxtTrans Γ σ1 σ2 σ' leq1 leq2 leq' refl
+          S1 : WellTypedTerm (substCxt≤ σ' leq' Γ) (substType≤ σ2 leq2 t1)
+          S1 rewrite Γ1≡Γ2 = s1'
+          S2 : WellTypedTerm (substCxt≤ σ' leq' Γ) t2
+          S2 rewrite Γ1≡Γ2 = w2
+          ConsS1S2 : WellTypedTerm (substCxt≤ σ' leq' Γ) (substType≤ σ2 leq2 t1 ∏ t2)
+          ConsS1S2 = Cons S1 S2

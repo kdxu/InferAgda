@@ -482,3 +482,49 @@ substCxt≤+1 : {m m' m''  n : ℕ} → (Γ : Cxt {m} n)
                 → substCxt≤ σ leq (liftCxt 1 Γ) ≡ substCxt≤ σ leq' Γ
 substCxt≤+1 [] leq leq' σ = refl
 substCxt≤+1 (x ∷ Γ) leq leq' σ = cong₂ _∷_ (cong (substType σ) (liftType≤add 1 x leq leq')) (substCxt≤+1 Γ leq leq' σ)
+
+{-
+substType : {m m' : ℕ} → AListType m m' → Type m → Type m'
+substType σ t = substFix {TypeDesc} σ t
+
+substType≤ : {m m' m'' : ℕ} → AListType m'' m' → m ≤ m'' → Type m → Type m'
+substType≤ σ m≤m'' t = substFix≤ {TypeDesc} σ m≤m'' t
+
+liftType : (m' : ℕ) → {m : ℕ} → Type m → Type (m' + m)
+liftType m' t = liftFix {TypeDesc} m' t
+
+-- substFix σ t : t に σ を適用した型を返す
+substFix : {D : Desc} → {m m' : ℕ} → AList D m m' → Fix D m → Fix D m'
+substFix σ t = mvar-map (mvar-sub σ) t
+
+-- substFix≤ σ m≤m' t : t の中の型変数の数を m から m'' に増やしてからσをかける
+substFix≤ : {D : Desc} → {m m' m'' : ℕ} → AList D m'' m' →
+            (m≤m'' : m ≤ m'') → Fix D m → Fix D m'
+substFix≤ σ m≤m'' t = mvar-map (mvar-sub σ) (liftFix≤ m≤m'' t)
+
+liftFix≤ : {D : Desc} → {m m' : ℕ} → (m≤m' : m ≤ m') → Fix D m → Fix D m'
+liftFix≤ m≤m' t = mvar-map-fin (λ x → inject≤ x m≤m') t
+
+-- n 持ち上げるのは≤も+もおなじ
+inject≤≡1 : {m : ℕ} → (x : Fin m) → (n : ℕ) → (leq : m ≤ suc m) → inject≤ x leq ≡ inject₁ x
+
+ 左辺 :
+substFix≤ {TypeDesc} σ leq t
+→  mvar-map (mvar-sub σ) (liftFix≤ leq t)
+→  mvar-map (mvar-sub σ) (mvar-map-fin (λ x → inject≤ x leq) t)
+
+右辺　：
+substType σ (liftType 1 t)
+→ substFix {TypeDesc} σ  (liftType 1 t)
+→ mvar-map (mvar-sub σ) (mvar-map-fin (inject+₁) t))
+
+-}
+
+inject≤≡+' : {m : ℕ} →  (n : ℕ) → (leq : m ≤ n + m) → (x : Fin m) → inject≤ x leq ≡ inject+' n x
+inject≤≡+' n leq x = inject≤≡+ x n leq
+
+substType≤≡n : {m m' : ℕ} → (n : ℕ) → (t : Type m)
+                → (leq : m ≤ n + m)
+                → (σ : AListType (n + m) m')
+                → substType≤ σ leq t ≡ substType σ (liftType n t)
+substType≤≡n n t leq σ = cong (λ x → mvar-map (mvar-sub σ) (mvar-map-fin x t)) ( ext (inject≤≡+' n leq))
