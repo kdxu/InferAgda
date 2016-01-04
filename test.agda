@@ -20,7 +20,7 @@ open import Relation.Binary hiding (_⇒_)
 ------------------------------------
 -- for test
 
-Var1 : WellScopedTerm 2
+Var1 : WellScopedTerm 1
 Var1 = Var (fromℕ 0)
 
 CxtE : {m : ℕ} → Cxt {m} 1

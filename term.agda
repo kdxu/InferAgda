@@ -172,7 +172,6 @@ data WellScopedTerm (n : ℕ) : Set where
   Snd : WellScopedTerm n → WellScopedTerm n
   Cons : WellScopedTerm n → WellScopedTerm n → WellScopedTerm n
 
-
 -- WellTypedTerm Γ t : 自由変数の数が n 個、型が t であるような well-typed な項
 data WellTypedTerm {m n : ℕ} (Γ : Cxt n) : Type m → Set where
   Var : (x : Fin n) → WellTypedTerm Γ (lookup x Γ)
@@ -183,6 +182,15 @@ data WellTypedTerm {m n : ℕ} (Γ : Cxt n) : Type m → Set where
   Fst : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t1
   Snd : {t1 t2 : Type m} → WellTypedTerm Γ (t1 ∏ t2) →  WellTypedTerm Γ t2
   Cons :  {t1 t2 : Type m} → WellTypedTerm Γ t1 → WellTypedTerm Γ t2 → WellTypedTerm Γ (t1 ∏ t2)
+
+-- WellTypedTerm から型情報を取り除く
+erase : {m n : ℕ} → {t : Type m} → {Γ : Cxt n} → WellTypedTerm Γ t → WellScopedTerm n
+erase (Var x) = Var x
+erase (Lam t w) = Lam (erase w)
+erase (App w1 w2) = App (erase w1) (erase w2)
+erase (Fst w) = Fst (erase w)
+erase (Snd w) = Snd (erase w)
+erase (Cons w1 w2) = Cons (erase w1) (erase w2)
 
 -- lookup と liftCxt は順番を変えても良い
 lookupLiftCxtCommute : (m' : ℕ) {n m : ℕ} (x : Fin n) (Γ : Cxt {m} n) →
@@ -219,6 +227,19 @@ substWTerm≤ σ m≤m' (App w1 w2) = App (substWTerm≤ σ m≤m' w1) (substWTe
 substWTerm≤ σ m≤m' (Fst w) = Fst (substWTerm≤ σ m≤m' w)
 substWTerm≤ σ m≤m' (Snd w) = Snd (substWTerm≤ σ m≤m' w)
 substWTerm≤ σ m≤m' (Cons w1 w2) = Cons (substWTerm≤ σ m≤m' w1) (substWTerm≤ σ m≤m' w2)
+
+-- substWTerm≤ しても erase 結果は変わらない
+eraseSubstWTerm≤ : {m m' m'' n : ℕ} → {t : Type m} → {Γ : Cxt {m} n}
+           → (σ : AListType m' m'')
+           → (leq : m ≤ m')
+           → (w : WellTypedTerm Γ t)
+           → erase (substWTerm≤ σ leq w) ≡ erase w
+eraseSubstWTerm≤ {Γ = Γ} σ leq (Var x) rewrite lookupSubst≤CxtCommute x Γ σ leq = refl
+eraseSubstWTerm≤ σ leq (Lam t w) = cong Lam (eraseSubstWTerm≤ σ leq w)
+eraseSubstWTerm≤ σ leq (App w1 w2) = cong₂ App (eraseSubstWTerm≤ σ leq w1) (eraseSubstWTerm≤ σ leq w2)
+eraseSubstWTerm≤ σ leq (Fst w) = cong Fst (eraseSubstWTerm≤ σ leq w)
+eraseSubstWTerm≤ σ leq (Snd w) = cong Snd (eraseSubstWTerm≤ σ leq w)
+eraseSubstWTerm≤ σ leq (Cons w1 w2) = cong₂ Cons (eraseSubstWTerm≤ σ leq w1) (eraseSubstWTerm≤ σ leq w2)
 
 thickxynothing : {m : ℕ} → {x y : Fin (suc m)} →
         thick x y ≡ nothing → thick (inject₁ x) (inject₁ y) ≡ nothing
