@@ -1,5 +1,9 @@
 module infer where
 
+open import nat
+open import mgu
+open import term
+
 open import Data.Nat
 open import Data.Nat.Properties
 open import Data.Fin hiding (_+_; _≤_)
@@ -7,8 +11,6 @@ open import Data.Vec
 open import Data.Product
 open import Data.Maybe
 open import Relation.Binary.PropositionalEquality
-open import mgu
-open import term
 
 --------------------------------------------------------------------------------
 
@@ -22,7 +24,7 @@ mutual
                 Σ[ w ∈ WellTypedTerm (substCxt≤ σ m≤m'' Γ) τ ]
                 erase w ≡ s)
   infer m Γ (Var x) = infer-Var m Γ x
-  infer m Γ (Lam s) = infer-Lam m Γ s 
+  infer m Γ (Lam s) = infer-Lam m Γ s
   infer m Γ (App s1 s2) = infer-App m Γ s1 s2
   infer m Γ (Fst s) = infer-Fst m Γ s
   infer m Γ (Snd s) = infer-Snd m Γ s
