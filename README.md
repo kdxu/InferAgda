@@ -1,5 +1,7 @@
 # InferAgda
 
+master thesis
+
 README
 -----
 
