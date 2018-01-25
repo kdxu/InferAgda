@@ -1,6 +1,6 @@
 # InferAgda
 
-master thesis
+[PAPER](http://www.is.ocha.ac.jp/~asai/jpapers/ppl/kadowaki16.pdf)
 
 README
 -----
